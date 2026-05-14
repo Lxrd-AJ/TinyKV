@@ -1,5 +1,29 @@
 {
     "folders": [
         {"path": "."}
-    ]
+    ],
+    "launch": {
+        "configurations": [
+            {
+                "type": "swift",
+                "request": "launch",
+                "args": [],
+                "cwd": "${workspaceFolder:TinyKV}",
+                "name": "Debug TinyKV (TinyKV)",
+                "target": "TinyKV",
+                "configuration": "debug",
+                "preLaunchTask": "swift: Build Debug TinyKV (TinyKV)"
+            },
+            {
+                "type": "swift",
+                "request": "launch",
+                "args": [],
+                "cwd": "${workspaceFolder:TinyKV}",
+                "name": "Release TinyKV (TinyKV)",
+                "target": "TinyKV",
+                "configuration": "release",
+                "preLaunchTask": "swift: Build Release TinyKV (TinyKV)"
+            }
+        ]
+    }
 }
