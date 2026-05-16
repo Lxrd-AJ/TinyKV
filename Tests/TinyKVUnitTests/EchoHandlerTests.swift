@@ -1,6 +1,6 @@
 import Testing
 import NIO
-@testable import TinyKV
+@testable import TinyKVServer
 
 struct EchoHandlerTests {
     @Test 

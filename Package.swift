@@ -6,23 +6,42 @@ let package = Package(
     platforms: [
         .macOS(.v14)
     ],
+    products: [
+        .library(name: "TinyKVCommon", targets: ["TinyKVCommon"]),
+        .executable(name: "TinyKVClient", targets: ["TinyKVClient"]),
+        .executable(name: "TinyKVServer", targets: ["TinyKVServer"]),
+    ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.65.0")
     ],
     targets: [
-        .executableTarget(
-            name: "TinyKV",
+        .target(
+            name: "TinyKVCommon",
             dependencies: [
+                .product(name: "NIO", package: "swift-nio")
+            ]
+        ),
+        .executableTarget(
+            name: "TinyKVClient",
+            dependencies: [
+                "TinyKVCommon",
+                .product(name: "NIO", package: "swift-nio")
+            ]
+        ),
+        .executableTarget(
+            name: "TinyKVServer",
+            dependencies: [
+                "TinyKVCommon",
                 .product(name: "NIO", package: "swift-nio")
             ]
         ),
         .testTarget(
             name: "TinyKVUnitTests",
-            dependencies: ["TinyKV"]
+            dependencies: ["TinyKVServer", "TinyKVCommon", "TinyKVClient"]
         ),
         .testTarget(
             name: "TinyKVIntegrationTests",
-            dependencies: ["TinyKV"]
+            dependencies: ["TinyKVServer", "TinyKVCommon", "TinyKVClient"]
         ),
     ]
 )

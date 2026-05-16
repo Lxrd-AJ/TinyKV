@@ -1,4 +1,5 @@
 import NIO
+import TinyKVCommon
 import Foundation
 
 // 1. Define a basic ChannelHandler to handle incoming data
@@ -26,7 +27,7 @@ final class EchoHandler: ChannelInboundHandler, Sendable {
 }
 
 @main
-struct TinyKV {
+struct TinyKVServer {
     static func main() async throws {
         // 2. Setup the EventLoopGroup
         let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
