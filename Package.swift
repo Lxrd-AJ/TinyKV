@@ -17,7 +17,11 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "TinyKVTests",
+            name: "TinyKVUnitTests",
+            dependencies: ["TinyKV"]
+        ),
+        .testTarget(
+            name: "TinyKVIntegrationTests",
             dependencies: ["TinyKV"]
         ),
     ]

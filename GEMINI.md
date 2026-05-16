@@ -34,3 +34,11 @@ As the user progresses through the implementation, they will encounter key archi
 * **Pattern:** Zero-Copy Slicing.
 * **Why:** While using ARC for general object lifetimes, the core data ingestion must avoid unnecessary allocations to maintain Redis-like speeds.
 * **Example Implementation:** Utilizing SwiftNIO's `ByteBuffer` to slice memory references instead of copying `Data` or `String` structures whenever possible.
+
+### 5. AI Vector Search (Future Work)
+* **Pattern:** SIMD-Accelerated Vector Math & specialized index structures (e.g., HNSW).
+* **Why:** To support modern generative AI workloads directly within the datastore, mimicking the capabilities of the RediSearch module (e.g., vector embeddings, cosine similarity, dot product).
+* **Example Implementation:** Utilizing Apple's `Accelerate` framework, MLX or `simd` types in Swift for high-performance, parallelized vector distance calculations during nearest-neighbor queries. This will require extending the parsing engine to support commands like `FT.SEARCH`.
+
+## Coding guidelines
+* When writing tests, prefer a newline after `@Test` annotations for better readability.

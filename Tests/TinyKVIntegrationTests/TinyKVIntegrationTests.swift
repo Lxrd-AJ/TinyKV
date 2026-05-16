@@ -24,8 +24,9 @@ final class ClientResponseHandler: ChannelInboundHandler, Sendable {
     }
 }
 
-struct TinyKVTests {
-    @Test func testEchoServer() async throws {
+struct TinyKVIntegrationTests {
+    @Test 
+    func testEchoServer() async throws {
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         
         // 3. Configure the ServerBootstrap
