@@ -1,9 +1,10 @@
 import Foundation
 import NIO
+import TinyKVCommon
 
 final class SimpleClientHandler: ChannelInboundHandler, Sendable {
-    typealias InboundIn = ByteBuffer
-    typealias OutboundOut = ByteBuffer
+    typealias InboundIn = Message
+    typealias OutboundOut = Message
     
     let responsePromise: EventLoopPromise<String>?
 
@@ -12,19 +13,28 @@ final class SimpleClientHandler: ChannelInboundHandler, Sendable {
     }
 
     func channelActive(context: ChannelHandlerContext) {
-        let message = "PING"
-        var buffer = context.channel.allocator.buffer(capacity: message.utf8.count)
-        buffer.writeString(message)
-        print("Sending: \(message)")
-        context.writeAndFlush(self.wrapOutboundOut(buffer), promise: nil)
+        let messages = [
+            Message(contents: "GET"),
+            Message(contents: "PUT"),
+            Message(contents: "UPDATE"),
+        ]
+
+        print("[Channel active]: Would send \(messages.count) entries")
+        
+        for (index, msg) in messages.enumerated() {
+            // Flush on the last message
+            if index == messages.count - 1 {
+                context.writeAndFlush(self.wrapOutboundOut(msg), promise: nil)
+            } else {
+                context.write(self.wrapOutboundOut(msg), promise: nil)
+            }
+        }
     }
 
     func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-        var buffer = self.unwrapInboundIn(data)
-        if let string = buffer.readString(length: buffer.readableBytes) {
-            print("Received: \(string.trimmingCharacters(in: .whitespacesAndNewlines))")
-            responsePromise?.succeed(string)
-        }
+        let message = self.unwrapInboundIn(data)
+        print("Received: \(message.contents.trimmingCharacters(in: .whitespacesAndNewlines))")
+        responsePromise?.succeed(message.contents)
         
         // Disconnect after receiving a response for testing purposes
         context.close(promise: nil)
@@ -45,12 +55,17 @@ struct TinyKVClientApp {
         let bootstrap = ClientBootstrap(group: group)
             .channelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
             .channelInitializer { channel in
-                channel.pipeline.addHandler(SimpleClientHandler())
+                channel.eventLoop.makeCompletedFuture {
+                    try channel.pipeline.syncOperations.addHandlers([
+                        ByteToMessageHandler(MessageDecoder()),
+                        MessageToByteHandler(MessageEncoder()),
+                        SimpleClientHandler()
+                    ])
+                }
             }
 
         let host = "127.0.0.1"
-        let port = 6379
-
+        let port = PORT
         do {
             print("Connecting to \(host):\(port)...")
             let channel = try await bootstrap.connect(host: host, port: port).get()

@@ -1,6 +1,7 @@
 import Testing
 import NIO
 @testable import TinyKVClient
+import TinyKVCommon
 
 struct SimpleClientHandlerTests {
     @Test 
@@ -15,14 +16,13 @@ struct SimpleClientHandlerTests {
         channel.pipeline.fireChannelActive()
         
         // 4. "Read" data outbound as if it's being sent from the client to the network
-        guard var outboundBuffer: ByteBuffer = try channel.readOutbound() else {
-            Issue.record("Expected to read a ByteBuffer from outbound")
+        guard let outboundMsg: Message = try channel.readOutbound() else {
+            Issue.record("Expected to read a Message from outbound")
             return
         }
         
-        // 5. Assert the client automatically sent "PING"
-        let sent = outboundBuffer.readString(length: outboundBuffer.readableBytes)
-        #expect(sent == "PING")
+        // 5. Assert the client automatically sent the messages
+        #expect(outboundMsg.contents == "GET")
         
         // 6. Clean up
         _ = try? channel.finish()
@@ -37,15 +37,11 @@ struct SimpleClientHandlerTests {
         try channel.pipeline.addHandler(SimpleClientHandler(promise: promise)).wait()
         
         // 1. Simulate server sending "PONG" back
-        let message = "PONG\n"
-        var buffer = channel.allocator.buffer(capacity: message.utf8.count)
-        buffer.writeString(message)
-        
-        try channel.writeInbound(buffer)
+        try channel.writeInbound(Message(contents: "PONG"))
         
         // 2. Verify the promise was fulfilled with the message
         let received = try promise.futureResult.wait()
-        #expect(received == message)
+        #expect(received == "PONG")
         
         _ = try? channel.finish()
     }

@@ -4,16 +4,15 @@ import Foundation
 
 // 1. Define a basic ChannelHandler to handle incoming data
 final class EchoHandler: ChannelInboundHandler, Sendable {
-    typealias InboundIn = ByteBuffer
-    typealias OutboundOut = ByteBuffer
+    typealias InboundIn = Message
+    typealias OutboundOut = Message
 
     func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-        var buffer = self.unwrapInboundIn(data)
-        if let receivedString = buffer.readString(length: buffer.readableBytes) {
-            print("Received: \(receivedString.trimmingCharacters(in: .whitespacesAndNewlines))")
-        }
+        let message = self.unwrapInboundIn(data)
+        print("Received: \(message.contents)")
         
-        context.write(data, promise: nil)
+        // send the incoming data back to the client (echo)
+        context.write(self.wrapOutboundOut(message), promise: nil)
     }
 
     func channelReadComplete(context: ChannelHandlerContext) {
@@ -41,7 +40,13 @@ struct TinyKVServer {
             .serverChannelOption(ChannelOptions.backlog, value: 256)
             .serverChannelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
             .childChannelInitializer { channel in
-                channel.pipeline.addHandler(EchoHandler())
+                channel.eventLoop.makeCompletedFuture {
+                    try channel.pipeline.syncOperations.addHandlers([
+                        ByteToMessageHandler(MessageDecoder()),
+                        MessageToByteHandler(MessageEncoder()),
+                        EchoHandler()
+                    ])
+                }
             }
             .childChannelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
             .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 16)
@@ -49,10 +54,9 @@ struct TinyKVServer {
 
         // 4. Bind to a port and start listening
         let host = "127.0.0.1"
-        let port = 6379
 
         do {
-            let channel = try await bootstrap.bind(host: host, port: port).get()
+            let channel = try await bootstrap.bind(host: host, port: PORT).get()
             print("Server running on \(channel.localAddress!)")
 
             // 5. Wait for the server socket to close

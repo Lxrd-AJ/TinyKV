@@ -3,6 +3,7 @@ import NIO
 import Foundation
 @testable import TinyKVServer
 @testable import TinyKVClient
+import TinyKVCommon
 
 struct TinyKVIntegrationTests {
     @Test 
@@ -12,7 +13,13 @@ struct TinyKVIntegrationTests {
         // 1. Configure the ServerBootstrap
         let serverBootstrap = ServerBootstrap(group: group)
             .childChannelInitializer { channel in
-                channel.pipeline.addHandler(EchoHandler())
+                channel.eventLoop.makeCompletedFuture {
+                    try channel.pipeline.syncOperations.addHandlers([
+                        ByteToMessageHandler(MessageDecoder()),
+                        MessageToByteHandler(MessageEncoder()),
+                        EchoHandler()
+                    ])
+                }
             }
 
         // Bind to port 0 to let the OS assign an available port
@@ -23,16 +30,22 @@ struct TinyKVIntegrationTests {
         let promise: EventLoopPromise<String> = group.next().makePromise()
         let clientBootstrap = ClientBootstrap(group: group)
             .channelInitializer { channel in
-                // We use the actual SimpleClientHandler from our client executable!
-                channel.pipeline.addHandler(SimpleClientHandler(promise: promise))
+                channel.eventLoop.makeCompletedFuture {
+                    try channel.pipeline.syncOperations.addHandlers([
+                        ByteToMessageHandler(MessageDecoder()),
+                        MessageToByteHandler(MessageEncoder()),
+                        // We use the actual SimpleClientHandler from our client executable!
+                        SimpleClientHandler(promise: promise)
+                    ])
+                }
             }
         
         // 3. Connect and let SimpleClientHandler do its thing (it sends "PING" on connect)
         let clientChannel = try await clientBootstrap.connect(host: "127.0.0.1", port: port).get()
         
-        // 4. Verify we receive the echoed PING
+        // 4. Verify we receive the echoed message
         let received = try await promise.futureResult.get()
-        #expect(received == "PING")
+        #expect(received == "GET")
         
         // 5. Cleanup
         try await clientChannel.closeFuture.get()

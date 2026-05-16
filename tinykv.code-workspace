@@ -63,6 +63,46 @@
                 "target": "TinyKVServer",
                 "configuration": "release",
                 "preLaunchTask": "swift: Build Release TinyKVServer (TinyKV)"
+            },
+            {
+                "type": "swift",
+                "request": "launch",
+                "args": [],
+                "cwd": "${workspaceFolder:TinyKV}",
+                "name": "Debug tkvs (TinyKV)",
+                "target": "tkvs",
+                "configuration": "debug",
+                "preLaunchTask": "swift: Build Debug tkvs (TinyKV)"
+            },
+            {
+                "type": "swift",
+                "request": "launch",
+                "args": [],
+                "cwd": "${workspaceFolder:TinyKV}",
+                "name": "Release tkvs (TinyKV)",
+                "target": "tkvs",
+                "configuration": "release",
+                "preLaunchTask": "swift: Build Release tkvs (TinyKV)"
+            },
+            {
+                "type": "swift",
+                "request": "launch",
+                "args": [],
+                "cwd": "${workspaceFolder:TinyKV}",
+                "name": "Debug tkvc (TinyKV)",
+                "target": "tkvc",
+                "configuration": "debug",
+                "preLaunchTask": "swift: Build Debug tkvc (TinyKV)"
+            },
+            {
+                "type": "swift",
+                "request": "launch",
+                "args": [],
+                "cwd": "${workspaceFolder:TinyKV}",
+                "name": "Release tkvc (TinyKV)",
+                "target": "tkvc",
+                "configuration": "release",
+                "preLaunchTask": "swift: Build Release tkvc (TinyKV)"
             }
         ]
     }

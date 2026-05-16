@@ -8,8 +8,8 @@ let package = Package(
     ],
     products: [
         .library(name: "TinyKVCommon", targets: ["TinyKVCommon"]),
-        .executable(name: "TinyKVClient", targets: ["TinyKVClient"]),
-        .executable(name: "TinyKVServer", targets: ["TinyKVServer"]),
+        .executable(name: "tkvc", targets: ["TinyKVClient"]),
+        .executable(name: "tkvs", targets: ["TinyKVServer"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.65.0")

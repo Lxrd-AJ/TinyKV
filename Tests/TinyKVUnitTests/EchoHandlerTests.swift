@@ -1,6 +1,7 @@
 import Testing
 import NIO
 @testable import TinyKVServer
+import TinyKVCommon
 
 struct EchoHandlerTests {
     @Test 
@@ -12,22 +13,19 @@ struct EchoHandlerTests {
         try channel.pipeline.addHandler(EchoHandler()).wait()
         
         // 3. Prepare some test data
-        let message = "Hello Embedded TinyKV"
-        var buffer = channel.allocator.buffer(capacity: message.utf8.count)
-        buffer.writeString(message)
+        let message = Message(contents: "Hello Embedded TinyKV")
         
         // 4. "Write" data inbound as if it came from the network
-        try channel.writeInbound(buffer)
+        try channel.writeInbound(message)
         
         // 5. "Read" data outbound as if it's being sent back to the network
-        guard var outboundBuffer: ByteBuffer = try channel.readOutbound() else {
-            Issue.record("Expected to read a ByteBuffer from outbound")
+        guard let outboundMsg: Message = try channel.readOutbound() else {
+            Issue.record("Expected to read a Message from outbound")
             return
         }
         
         // 6. Assert the echo worked
-        let received = outboundBuffer.readString(length: outboundBuffer.readableBytes)
-        #expect(received == message)
+        #expect(outboundMsg.contents == "Hello Embedded TinyKV")
         
         // 7. Clean up
         _ = try channel.finish()
