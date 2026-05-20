@@ -57,8 +57,8 @@ struct TinyKVClientApp {
             .channelInitializer { channel in
                 channel.eventLoop.makeCompletedFuture {
                     try channel.pipeline.syncOperations.addHandlers([
-                        ByteToMessageHandler(MessageDecoder()),
                         MessageToByteHandler(MessageEncoder()),
+                        ByteToMessageHandler(MessageDecoder()),
                         SimpleClientHandler()
                     ])
                 }

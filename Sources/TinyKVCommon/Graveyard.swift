@@ -1,5 +1,19 @@
 import NIO
 
+// DEPRECATE
+public final class MessageEncoder: MessageToByteEncoder {
+    public typealias OutboundIn = Message
+
+    public init() {}
+
+    public func encode(data: Message, out: inout ByteBuffer) throws {
+        let length = UInt32(data.contents.utf8.count)
+        out.writeInteger(length, endianness: .little)
+        out.writeString(data.contents)
+    }
+}
+
+// DEPRECATE
 public final class MessageDecoder: ByteToMessageDecoder {
     public typealias InboundOut = Message
 
@@ -31,5 +45,30 @@ public final class MessageDecoder: ByteToMessageDecoder {
         // 6. Pass the decoded message to the next handler
         context.fireChannelRead(self.wrapInboundOut(Message(contents: string)))
         return .continue
+    }
+}
+
+// 1. Define a basic ChannelHandler to handle incoming data
+public final class EchoHandler: ChannelInboundHandler, Sendable {
+    public typealias InboundIn = Message
+    public typealias OutboundOut = Message
+
+    public init() {}
+
+    public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
+        let message = self.unwrapInboundIn(data)
+        print("Received: \(message.contents)")
+        
+        // send the incoming data back to the client (echo)
+        context.write(self.wrapOutboundOut(message), promise: nil)
+    }
+
+    public func channelReadComplete(context: ChannelHandlerContext) {
+        context.flush()
+    }
+
+    public func errorCaught(context: ChannelHandlerContext, error: Error) {
+        print("Error: \(error)")
+        context.close(promise: nil)
     }
 }
