@@ -12,7 +12,8 @@ let package = Package(
         .executable(name: "tkvs", targets: ["TinyKVServer"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-nio.git", from: "2.65.0")
+        .package(url: "https://github.com/apple/swift-nio.git", from: "2.65.0"),
+        .package(url: "https://github.com/ordo-one/package-benchmark", from: "1.31.0")
     ],
     targets: [
         .target(
@@ -33,6 +34,19 @@ let package = Package(
             dependencies: [
                 "TinyKVCommon",
                 .product(name: "NIO", package: "swift-nio")
+            ]
+        ),
+        .executableTarget(
+            name: "TinyKVBenchmark",
+            dependencies: [
+                "TinyKVServer", 
+                "TinyKVCommon", 
+                "TinyKVClient",
+                .product(name: "Benchmark", package: "package-benchmark")
+            ],
+            path: "Benchmarks/TinyKVBenchmark",
+            plugins: [
+                .plugin(name: "BenchmarkPlugin", package: "package-benchmark")
             ]
         ),
         .testTarget(

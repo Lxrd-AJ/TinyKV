@@ -103,6 +103,26 @@
                 "target": "tkvc",
                 "configuration": "release",
                 "preLaunchTask": "swift: Build Release tkvc (TinyKV)"
+            },
+            {
+                "type": "swift",
+                "request": "launch",
+                "args": [],
+                "cwd": "${workspaceFolder:TinyKV}",
+                "name": "Debug TinyKVBenchmark (TinyKV)",
+                "target": "TinyKVBenchmark",
+                "configuration": "debug",
+                "preLaunchTask": "swift: Build Debug TinyKVBenchmark (TinyKV)"
+            },
+            {
+                "type": "swift",
+                "request": "launch",
+                "args": [],
+                "cwd": "${workspaceFolder:TinyKV}",
+                "name": "Release TinyKVBenchmark (TinyKV)",
+                "target": "TinyKVBenchmark",
+                "configuration": "release",
+                "preLaunchTask": "swift: Build Release TinyKVBenchmark (TinyKV)"
             }
         ]
     }

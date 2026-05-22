@@ -15,6 +15,10 @@ run:
 test:
 	swift test
 
+## benchmark: Run the performance benchmarks
+benchmark:
+	swift package benchmark
+
 ## clean: Remove build artifacts
 clean:
 	swift package clean

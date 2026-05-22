@@ -3,7 +3,7 @@ import NIO
 @testable import TinyKVServer
 import TinyKVCommon
 
-struct CodecTests {
+struct RequestDecoderTests {
     let allocator = ByteBufferAllocator()
     let channel = EmbeddedChannel()
 

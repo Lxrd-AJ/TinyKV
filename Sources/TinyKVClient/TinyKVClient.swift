@@ -3,8 +3,8 @@ import NIO
 import TinyKVCommon
 
 final class SimpleClientHandler: ChannelInboundHandler, Sendable {
-    typealias InboundIn = Message
-    typealias OutboundOut = Message
+    typealias InboundIn = Response
+    typealias OutboundOut = Request
     
     let responsePromise: EventLoopPromise<String>?
 
@@ -14,9 +14,10 @@ final class SimpleClientHandler: ChannelInboundHandler, Sendable {
 
     func channelActive(context: ChannelHandlerContext) {
         let messages = [
-            Message(contents: "GET"),
-            Message(contents: "PUT"),
-            Message(contents: "UPDATE"),
+            Request(contents: ["GET", "key1"]),
+            Request(contents: ["SET", "key1", "value1"]),
+            Request(contents: ["UPDATE"]),
+            Request(contents: ["DELETE", "key1"])
         ]
 
         print("[Channel active]: Would send \(messages.count) entries")
@@ -32,9 +33,9 @@ final class SimpleClientHandler: ChannelInboundHandler, Sendable {
     }
 
     func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-        let message = self.unwrapInboundIn(data)
-        print("Received: \(message.contents.trimmingCharacters(in: .whitespacesAndNewlines))")
-        responsePromise?.succeed(message.contents)
+        let response = self.unwrapInboundIn(data)
+        print("Received: \(response.statusCode) - \(response.body)")
+        responsePromise?.succeed(response.body)
         
         // Disconnect after receiving a response for testing purposes
         context.close(promise: nil)
@@ -57,8 +58,8 @@ struct TinyKVClientApp {
             .channelInitializer { channel in
                 channel.eventLoop.makeCompletedFuture {
                     try channel.pipeline.syncOperations.addHandlers([
-                        MessageToByteHandler(MessageEncoder()),
-                        ByteToMessageHandler(MessageDecoder()),
+                        MessageToByteHandler(RequestEncoder()),
+                        ByteToMessageHandler(ResponseDecoder()),
                         SimpleClientHandler()
                     ])
                 }

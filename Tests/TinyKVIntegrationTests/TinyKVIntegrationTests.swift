@@ -9,47 +9,102 @@ struct TinyKVIntegrationTests {
     @Test 
     func testServerAndClientIntegration() async throws {
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+        let store = KVStore()
         
         // 1. Configure the ServerBootstrap
+        let connectionHandler = ConnectionHandler(store: store)
         let serverBootstrap = ServerBootstrap(group: group)
-            .childChannelInitializer { channel in
-                channel.eventLoop.makeCompletedFuture {
-                    try channel.pipeline.syncOperations.addHandlers([
-                        ByteToMessageHandler(MessageDecoder()),
-                        MessageToByteHandler(MessageEncoder()),
-                        EchoHandler()
-                    ])
-                }
-            }
 
         // Bind to port 0 to let the OS assign an available port
-        let serverChannel = try await serverBootstrap.bind(host: "127.0.0.1", port: 0).get()
-        let port = serverChannel.localAddress!.port!
+        let serverChannel = try await serverBootstrap.bind(
+            host: "127.0.0.1",
+            port: 0
+        ) { childChannel in
+            childChannel.eventLoop.makeCompletedFuture {
+                try childChannel.pipeline.syncOperations.addHandlers([
+                    ByteToMessageHandler(RequestDecoder()),
+                    MessageToByteHandler(ResponseEncoder())
+                ])
+                return try NIOAsyncChannel<Request, Response>(
+                    wrappingChannelSynchronously: childChannel
+                )
+            }
+        }
         
-        // 2. Setup the Client
-        let promise: EventLoopPromise<String> = group.next().makePromise()
-        let clientBootstrap = ClientBootstrap(group: group)
-            .channelInitializer { channel in
-                channel.eventLoop.makeCompletedFuture {
-                    try channel.pipeline.syncOperations.addHandlers([
-                        ByteToMessageHandler(MessageDecoder()),
-                        MessageToByteHandler(MessageEncoder()),
-                        // We use the actual SimpleClientHandler from our client executable!
-                        SimpleClientHandler(promise: promise)
-                    ])
+        let port = serverChannel.channel.localAddress!.port!
+        
+        let serverTask = Task {
+            try await withThrowingDiscardingTaskGroup { taskGroup in
+                try await serverChannel.executeThenClose { serverChannelInbound in
+                    for try await childChannel in serverChannelInbound {
+                        taskGroup.addTask {
+                            try await childChannel.executeThenClose { inbound, outbound in
+                                await connectionHandler.handle(inbound: inbound, outbound: outbound)
+                            }
+                        }
+                    }
                 }
             }
+        }
         
-        // 3. Connect and let SimpleClientHandler do its thing (it sends "PING" on connect)
-        let clientChannel = try await clientBootstrap.connect(host: "127.0.0.1", port: port).get()
+        // 2. Setup the Client
+        let clientBootstrap = ClientBootstrap(group: group)
         
-        // 4. Verify we receive the echoed message
-        let received = try await promise.futureResult.get()
-        #expect(received == "GET")
+        let clientChannel = try await clientBootstrap.connect(
+            host: "127.0.0.1",
+            port: port
+        ) { channel in
+            channel.eventLoop.makeCompletedFuture {
+                try channel.pipeline.syncOperations.addHandlers([
+                    MessageToByteHandler(RequestEncoder()),
+                    ByteToMessageHandler(ResponseDecoder())
+                ])
+                return try NIOAsyncChannel<Response, Request>(
+                    wrappingChannelSynchronously: channel
+                )
+            }
+        }
+        
+        // 3. Connect and send a sequence of requests
+        try await store.set(key: "integration_test_key", value: "success")
+        
+        try await clientChannel.executeThenClose { inbound, outbound in
+            // SET
+            try await outbound.write(Request(contents: ["SET", "multi_key", "multi_value"]))
+            
+            // GET
+            try await outbound.write(Request(contents: ["GET", "multi_key"]))
+            
+            // DELETE
+            try await outbound.write(Request(contents: ["DELETE", "multi_key"]))
+            
+            var iterator = inbound.makeAsyncIterator()
+            
+            // Verify SET response
+            if let response = try await iterator.next() {
+                #expect(response.body == "OK")
+            } else {
+                Issue.record("Did not receive SET response")
+            }
+            
+            // Verify GET response
+            if let response = try await iterator.next() {
+                #expect(response.body == "multi_value")
+            } else {
+                Issue.record("Did not receive GET response")
+            }
+            
+            // Verify DELETE response
+            if let response = try await iterator.next() {
+                #expect(response.body == "OK")
+            } else {
+                Issue.record("Did not receive DELETE response")
+            }
+        }
         
         // 5. Cleanup
-        try await clientChannel.closeFuture.get()
-        try? await serverChannel.close().get()
+        serverTask.cancel()
+        try? await serverChannel.channel.close().get()
         
         try await group.shutdownGracefully()
     }
