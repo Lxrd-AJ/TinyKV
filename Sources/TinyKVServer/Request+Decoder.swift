@@ -32,7 +32,7 @@ public final class RequestDecoder: ByteToMessageDecoder {
             guard buffer.readableBytes >= 4 else { return .needMoreData }
             // Peek at the length without consuming it
             let length = Int(buffer.getInteger(at: buffer.readerIndex, endianness: .little, as: UInt32.self)!)
-            guard length <= (512 * 1024 * 1024) else {
+            guard length <= MAX_PAYLOAD_SIZE else {
                 throw DecodingError.dataCorrupted(
                     DecodingError.Context(codingPath: [], debugDescription: "String length \(length) exceeds maximum allowed size")
                 )

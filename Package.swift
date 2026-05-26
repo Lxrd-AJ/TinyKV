@@ -13,7 +13,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.65.0"),
-        .package(url: "https://github.com/ordo-one/package-benchmark", from: "1.31.0")
+        .package(url: "https://github.com/ordo-one/package-benchmark", from: "1.33.0")
     ],
     targets: [
         .target(

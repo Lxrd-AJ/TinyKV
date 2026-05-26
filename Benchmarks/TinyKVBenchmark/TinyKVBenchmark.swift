@@ -4,10 +4,13 @@ import Foundation
 import TinyKVCommon
 
 let benchmarks: @Sendable () -> Void = {
-    let payloadSize = 10_000_000
+    let payloadSize = MAX_PAYLOAD_SIZE
     let repeatedString = String(repeating: "A", count: payloadSize)
+    let unitsToUse: [BenchmarkMetric: BenchmarkUnits] = [
+        .peakMemoryResident : BenchmarkUnits.giga,
+    ]
 
-    Benchmark("String Extraction", configuration: .init(metrics: [.mallocCountTotal, .wallClock, .peakMemoryResident])) { benchmark in
+    Benchmark("String Extraction", configuration: .init(metrics: [.mallocCountTotal, .wallClock, .peakMemoryResident], timeUnits: .milliseconds, units: unitsToUse)) { benchmark in
         var buffer = ByteBufferAllocator().buffer(capacity: payloadSize)
         buffer.writeString(repeatedString)
         
@@ -16,7 +19,7 @@ let benchmarks: @Sendable () -> Void = {
         benchmark.stopMeasurement()
     }
 
-    Benchmark("Slice Extraction", configuration: .init(metrics: [.mallocCountTotal, .wallClock, .peakMemoryResident])) { benchmark in
+    Benchmark("Slice Extraction", configuration: .init(metrics: [.mallocCountTotal, .wallClock, .peakMemoryResident], timeUnits: .milliseconds, units: unitsToUse)) { benchmark in
         var buffer = ByteBufferAllocator().buffer(capacity: payloadSize)
         buffer.writeString(repeatedString)
         

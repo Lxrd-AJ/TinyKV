@@ -2,6 +2,7 @@ import Foundation
 import NIO
 
 public let PORT: Int = 6379
+public let MAX_PAYLOAD_SIZE: Int = 512 * 1024 * 1024 // 512 MB
 
 public struct Message: Sendable {
     public let contents: String
