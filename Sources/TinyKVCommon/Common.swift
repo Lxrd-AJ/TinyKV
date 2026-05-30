@@ -12,7 +12,7 @@ public struct Message: Sendable {
     }
 }
 
-public actor KVStore {
+struct KVStore {
     private let store: HashTable
 
     public init(capacity: Int = 1024) {
@@ -38,13 +38,25 @@ public actor TinyKVEngine {
 
     public init() {}
 
+    internal func _testOnlyGet(key: ByteBuffer) -> ByteBuffer? {
+        return self.store.get(key: key)
+    }
+
+    internal func _testOnlySet(key: ByteBuffer, value: ByteBuffer) {
+        self.store.set(key: key, value: value)
+    }
+
+    internal func _testOnlyDelete(key: ByteBuffer) -> ByteBuffer? {
+        return self.store.delete(key: key)
+    }
+
     private func makeBuffer(_ string: String) -> ByteBuffer {
         var buffer = self.allocator.buffer(capacity: string.utf8.count)
         buffer.writeString(string)
         return buffer
     }
 
-    public func process(_ request: Request) async -> Response {
+    public func process(_ request: Request) -> Response {
         guard let commandBuf = request.contents.first,
               let command = commandBuf.getString(at: commandBuf.readerIndex, length: commandBuf.readableBytes)?.uppercased() else {
             return Response(statusCode: .emptyRequest, body: self.makeBuffer("ERROR: Empty request"))
@@ -56,7 +68,7 @@ public actor TinyKVEngine {
                     return Response(statusCode: .badRequest, body: self.makeBuffer("ERROR: GET requires exactly 1 argument"))
                 }
                 let key = request.contents[1]
-                let value = await self.store.get(key: key)
+                let value = self.store.get(key: key)
                 if let value = value {
                     return Response(statusCode: .success, body: value)
                 } else {
@@ -74,7 +86,7 @@ public actor TinyKVEngine {
                 }
                 let key = request.contents[1]
                 let value = request.contents[2]
-                await store.set(key: key, value: value)
+                store.set(key: key, value: value)
                 return Response(statusCode: .success, body: self.makeBuffer("OK"))
 
             case "DELETE":
@@ -82,7 +94,7 @@ public actor TinyKVEngine {
                     return Response(statusCode: .badRequest, body: self.makeBuffer("ERROR: DELETE requires exactly 1 argument"))
                 }
                 let key = request.contents[1]
-                let deleted = await store.delete(key: key)
+                let deleted = store.delete(key: key)
                 if deleted != nil {
                     return Response(statusCode: .success, body: self.makeBuffer("OK"))
                 } else {
