@@ -13,7 +13,7 @@ struct HashNode {
 class HashTable {
     // The buckets of the hash table. Each bucket is a linked list of `HashNode`s to handle collisions.
     // Store pointers to `HashNode`s instead of `HashNode`s directly to avoid unnecessary copying of the nodes when resizing the hash table.
-    var buckets: UnsafeMutablePointer<UnsafeMutablePointer<HashNode>?>
+    private(set) var buckets: UnsafeMutablePointer<UnsafeMutablePointer<HashNode>?>
 
     // The bit mask (size - 1)
     // The default module operator `index = hashCode % indexMask` is too slow on a CPU
