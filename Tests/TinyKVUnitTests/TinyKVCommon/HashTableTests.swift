@@ -15,49 +15,43 @@ struct HashTableTests {
     @Test
     func testInsertSingleItem() {
         let hashTable = HashTable(capacity: 16)
+        let actualKey = "test_key"
         let actualValue = "test_value"
-        var buffer = allocator.buffer(capacity: 16)
-        buffer.writeString(actualValue)
+        let entry = KVPair(key: actualKey, value: actualValue, allocator: self.allocator)
         
-        let nodePtr = HashTable.allocateNode(key: "test_key", value: buffer)
+        let nodePtr = HashTable.allocateNode(key: entry.rawKey, value: entry.rawValue)
         hashTable.insert(nodePtr)
         
         #expect(hashTable.count == 1)
         
-        let hashCode = HashTable.hash("test_key")
+        let hashCode = HashTable.hash(entry.rawKey)
         let index = hashCode & 15 // capacity 16 - 1
         
         let expectedNodePtr = hashTable.buckets[index]
         #expect(expectedNodePtr?.pointee.next == nil, "There should only 1 item in the linked list")
         #expect(expectedNodePtr?.pointee.value == nodePtr.pointee.value, "Both nodes should point to the same object")
-        #expect(expectedNodePtr?.pointee.value.getString(at: 0, length: buffer.readableBytes) == actualValue)
+        #expect(expectedNodePtr?.pointee.value.getString(at: 0, length: entry.rawValue.readableBytes) == actualValue)
     }
 
     @Test
     func testInsertDuplicateItemUpdatesValue() {
         let hashTable = HashTable(capacity: 16)
         
-        // Insert first
-        var buffer1 = allocator.buffer(capacity: 16)
-        buffer1.writeString("value_1")
-        let nodePtr1 = HashTable.allocateNode(key: "test_key", value: buffer1)
-        hashTable.insert(nodePtr1)
-        
+        let entry1 = KVPair(key: "test_key", value: "value_1", allocator: self.allocator)
+        hashTable.add(key: entry1.rawKey, value: entry1.rawValue)
         #expect(hashTable.count == 1)
         
         // Insert update
-        var buffer2 = allocator.buffer(capacity: 16)
-        buffer2.writeString("value_2")
-        let nodePtr2 = HashTable.allocateNode(key: "test_key", value: buffer2)
-        hashTable.insert(nodePtr2)
+        let entry2 = KVPair(key: "test_key", value: "value_2", allocator: self.allocator)
+        hashTable.add(key: entry2.rawKey, value: entry2.rawValue)
         
         // Count should remain the same
         #expect(hashTable.count == 1)
         
-        let hashCode = HashTable.hash("test_key")
+        let hashCode = HashTable.hash(entry2.rawKey)
         let index = hashCode & 15
         let expectedNodePtr = hashTable.buckets[index]
-        #expect(expectedNodePtr?.pointee.value.getString(at: 0, length: buffer2.readableBytes) == "value_2")
+        #expect(expectedNodePtr?.pointee.value.getString(at: 0, length: entry2.rawValue.readableBytes) == "value_2")
     }
 
     @Test
@@ -67,9 +61,8 @@ struct HashTableTests {
         let insertCount = 100
         
         for i in 0..<insertCount {
-            var buffer = allocator.buffer(capacity: 16)
-            buffer.writeString("value_\(i)")
-            let nodePtr = HashTable.allocateNode(key: "key_\(i)", value: buffer)
+            let pair = KVPair(key: "key_\(i)", value: "value_\(i)", allocator: allocator)
+            let nodePtr = HashTable.allocateNode(key: pair.rawKey, value: pair.rawValue)
             hashTable.insert(nodePtr)
         }
         
@@ -78,13 +71,15 @@ struct HashTableTests {
         // Verify a few items
         let testKeys = ["key_0", "key_50", "key_99"]
         for key in testKeys {
-            let hashCode = HashTable.hash(key)
+            var keyBuffer = allocator.buffer(capacity: 16)
+            keyBuffer.writeString(key)
+            let hashCode = HashTable.hash(keyBuffer)
             let index = hashCode & (capacity - 1)
             
             var currentNode = hashTable.buckets[index]
             var found = false
             while let node = currentNode {
-                if node.pointee.key == key {
+                if node.pointee.key == keyBuffer {
                     found = true
                     break
                 }
@@ -101,9 +96,8 @@ struct HashTableTests {
         
         // Insert enough items to guarantee a collision by Pigeonhole Principle
         for i in 0..<10 {
-            var buffer = allocator.buffer(capacity: 16)
-            buffer.writeString("val_\(i)")
-            let nodePtr = HashTable.allocateNode(key: "key_\(i)", value: buffer)
+            let pair = KVPair(key: "key_\(i)", value: "val_\(i)", allocator: allocator)
+            let nodePtr = HashTable.allocateNode(key: pair.rawKey, value: pair.rawValue)
             hashTable.insert(nodePtr)
         }
         
@@ -138,9 +132,8 @@ struct HashTableTests {
             let insertCount = 100
             
             for i in 0..<insertCount {
-                var buffer = allocator.buffer(capacity: 16)
-                buffer.writeString("value_\(i)")
-                let nodePtr = HashTable.allocateNode(key: "key_\(i)", value: buffer)
+                let pair = KVPair(key: "key_\(i)", value: "value_\(i)", allocator: allocator)
+                let nodePtr = HashTable.allocateNode(key: pair.rawKey, value: pair.rawValue)
                 hashTable.insert(nodePtr)
             }
 
@@ -159,7 +152,9 @@ struct HashTableTests {
         let randomKeyIndicesToLookup = (0..<5).map({ _ in Int.random(in: 0..<64) })
         for randIdx in randomKeyIndicesToLookup {
             let key = "key_\(randIdx)"
-            let returnedNodePtr = hashTable.lookup(key: key)
+            var keyBuffer = allocator.buffer(capacity: 16)
+            keyBuffer.writeString(key)
+            let returnedNodePtr = hashTable.lookup(key: keyBuffer)
 
             #expect(returnedNodePtr != nil, "The returned node should not be empty")
             #expect(returnedNodePtr?.pointee.value.getString(at: 0, length: returnedNodePtr!.pointee.value.readableBytes) == "value_\(randIdx)")
@@ -170,9 +165,26 @@ struct HashTableTests {
 extension HashTableTests {
     private func insert(_ insertCount: Int, into hashTable: HashTable) {
         for i in 0..<insertCount {
-            var buffer = self.allocator.buffer(capacity: 16)
-            buffer.writeString("value_\(i)")
-            hashTable.add(key: "key_\(i)", value: buffer)
+            let pair = KVPair(key: "key_\(i)", value: "value_\(i)", allocator: self.allocator)
+            hashTable.add(key: pair.rawKey, value: pair.rawValue)
         }
+    }
+}
+
+
+struct KVPair {
+    let key: String
+    let value: String
+    private(set) var rawKey: ByteBuffer
+    private(set) var rawValue: ByteBuffer
+
+    init(key: String, value: String, allocator: ByteBufferAllocator) {
+        self.key = key
+        self.value = value
+
+        self.rawKey = allocator.buffer(capacity: 16)
+        self.rawKey.writeString(key)
+        self.rawValue = allocator.buffer(capacity: 16)
+        self.rawValue.writeString(value)
     }
 }

@@ -5,7 +5,7 @@ struct HashNode {
     // The hash value returned from the `hash` function. So that we don't have to perform
     // a re-hash `hash(key)` every time the hash table gets resized.
     let hashCode: Int
-    let key: String
+    let key: ByteBuffer
     var value: ByteBuffer
     var next: UnsafeMutablePointer<HashNode>?
 }
@@ -47,6 +47,7 @@ class HashTable {
                 } while headNode != nil
             }
         }
+
         free(self.buckets)
     }
 
@@ -85,7 +86,7 @@ class HashTable {
         self.count += 1
     }
 
-    func lookup(key: String) -> UnsafeMutablePointer<HashNode>? {
+    func lookup(key: ByteBuffer) -> UnsafeMutablePointer<HashNode>? {
         guard count > 0 else {
             return nil
         }
@@ -104,7 +105,7 @@ class HashTable {
 }
 
 extension HashTable {
-    static func allocateNode(key: String, value: ByteBuffer) -> UnsafeMutablePointer<HashNode> {
+    static func allocateNode(key: ByteBuffer, value: ByteBuffer) -> UnsafeMutablePointer<HashNode> {
         let hashCode = HashTable.hash(key)
         let hashNode = HashNode(hashCode: hashCode, key: key, value: value)
         let ptr = UnsafeMutablePointer<HashNode>.allocate(capacity: 1)
@@ -119,7 +120,7 @@ extension HashTable {
     }
 
     /// Hash the key using the SipHash algorithm but modified to return only positive indices
-    static func hash(_ key: String) -> Int {
+    static func hash(_ key: ByteBuffer) -> Int {
         var hasher: Hasher = Hasher()
         hasher.combine(key)
 
@@ -127,7 +128,7 @@ extension HashTable {
     }
 
     /// Convenience function for inserting an item into the hashtable
-    func add(key: String, value: ByteBuffer) {
+    func add(key: ByteBuffer, value: ByteBuffer) {
         self.insert(
             HashTable.allocateNode(key: key, value: value)
         )
