@@ -13,7 +13,12 @@ struct RequestEncoderTests {
             MessageToByteHandler(RequestEncoder())
         ])
 
-        let request = Request(contents: ["GET", "key1"])
+        func makeBuf(_ s: String) -> ByteBuffer {
+            var b = allocator.buffer(capacity: s.utf8.count)
+            b.writeString(s)
+            return b
+        }
+        let request = Request(contents: [makeBuf("GET"), makeBuf("key1")])
         try channel.writeOutbound(request)
 
         guard var buffer: ByteBuffer = try channel.readOutbound() else {

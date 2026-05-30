@@ -23,7 +23,7 @@ struct RequestDecoderTests {
             return
         }
         
-        #expect(decodedRequest.contents == messages)
+        #expect(decodedRequest.contents.map { $0.getString(at: $0.readerIndex, length: $0.readableBytes) } == messages)
         
         _ = try channel.finish()
     }
@@ -43,7 +43,7 @@ struct RequestDecoderTests {
             Issue.record("Expected to read the first Request but got nil")
             return
         }
-        #expect(decodedRequest1.contents == messages1)
+        #expect(decodedRequest1.contents.map { $0.getString(at: $0.readerIndex, length: $0.readableBytes) } == messages1)
         
         // 2. Send the second request on the same channel
         let messages2 = ["SET", "key2", "value2"]
@@ -54,7 +54,7 @@ struct RequestDecoderTests {
             Issue.record("Expected to read the second Request but got nil")
             return
         }
-        #expect(decodedRequest2.contents == messages2)
+        #expect(decodedRequest2.contents.map { $0.getString(at: $0.readerIndex, length: $0.readableBytes) } == messages2)
         
         _ = try channel.finish()
     }
@@ -80,8 +80,8 @@ struct RequestDecoderTests {
             return
         }
 
-        #expect(decoded1.contents == messages1)
-        #expect(decoded2.contents == messages2)
+        #expect(decoded1.contents.map { $0.getString(at: $0.readerIndex, length: $0.readableBytes) } == messages1)
+        #expect(decoded2.contents.map { $0.getString(at: $0.readerIndex, length: $0.readableBytes) } == messages2)
 
         _ = try channel.finish()
     }

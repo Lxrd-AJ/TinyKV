@@ -102,6 +102,10 @@ class HashTable {
 
         return nil
     }
+
+    func delete(key: ByteBuffer) -> ByteBuffer? {
+        return nil
+    }
 }
 
 extension HashTable {

@@ -13,7 +13,9 @@ struct ResponseEncoderTests {
             MessageToByteHandler(ResponseEncoder())
         ])
 
-        let response = Response(statusCode: .success, body: "OK")
+        var bodyBuf = allocator.buffer(capacity: 2)
+        bodyBuf.writeString("OK")
+        let response = Response(statusCode: .success, body: bodyBuf)
         try channel.writeOutbound(response)
 
         guard var buffer: ByteBuffer = try channel.readOutbound() else {

@@ -4,6 +4,18 @@ import NIO
 import TinyKVCommon
 
 struct SimpleClientHandlerTests {
+    private let allocator = ByteBufferAllocator()
+
+    private func getString(_ b: ByteBuffer) -> String {
+        return b.getString(at: b.readerIndex, length: b.readableBytes) ?? ""
+    }
+
+    private func makeBuf(_ s: String) -> ByteBuffer {
+        var b = allocator.buffer(capacity: s.utf8.count)
+        b.writeString(s)
+        return b
+    }
+
     @Test 
     func testClientSendsPingOnActive() throws {
         // 1. Create the EmbeddedChannel
@@ -22,7 +34,7 @@ struct SimpleClientHandlerTests {
         }
         
         // 5. Assert the client automatically sent the messages
-        #expect(outboundMsg.contents == ["GET", "key1"])
+        #expect(outboundMsg.contents.map { getString($0) } == ["GET", "key1"])
         
         // 6. Clean up
         _ = try? channel.finish()
@@ -32,16 +44,16 @@ struct SimpleClientHandlerTests {
     func testClientFulfillsPromiseOnRead() throws {
         let channel = EmbeddedChannel()
         let loop = channel.eventLoop as! EmbeddedEventLoop
-        let promise: EventLoopPromise<String> = loop.makePromise()
+        let promise: EventLoopPromise<ByteBuffer> = loop.makePromise()
         
         try channel.pipeline.addHandler(SimpleClientHandler(promise: promise)).wait()
         
         // 1. Simulate server sending "PONG" back
-        try channel.writeInbound(Response(statusCode: .success, body: "PONG"))
+        try channel.writeInbound(Response(statusCode: .success, body: makeBuf("PONG")))
         
         // 2. Verify the promise was fulfilled with the message
         let received = try promise.futureResult.wait()
-        #expect(received == "PONG")
+        #expect(getString(received) == "PONG")
         
         _ = try? channel.finish()
     }

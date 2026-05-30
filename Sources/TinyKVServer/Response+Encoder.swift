@@ -16,8 +16,9 @@ public final class ResponseEncoder: MessageToByteEncoder {
         // Write status code (1 byte)
         out.writeInteger(data.statusCode.rawValue, endianness: .little, as: UInt8.self)
         // Write length of body (4 bytes)
-        out.writeInteger(UInt32(data.body.utf8.count), endianness: .little)
+        out.writeInteger(UInt32(data.body.readableBytes), endianness: .little)
         // Write body
-        out.writeString(data.body)
+        var body = data.body
+        out.writeBuffer(&body)
     }
 }

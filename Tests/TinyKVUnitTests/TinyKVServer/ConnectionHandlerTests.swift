@@ -5,6 +5,17 @@ import NIOEmbedded
 import TinyKVCommon
 
 struct ConnectionHandlerTests {
+    private let allocator = ByteBufferAllocator()
+
+    private func makeBuf(_ s: String) -> ByteBuffer {
+        var b = allocator.buffer(capacity: s.utf8.count)
+        b.writeString(s)
+        return b
+    }
+
+    private func getString(_ b: ByteBuffer) -> String {
+        return b.getString(at: b.readerIndex, length: b.readableBytes) ?? ""
+    }
     
     @Test
     func testConnectionHandlerStreamHandling() async throws {
@@ -25,20 +36,20 @@ struct ConnectionHandlerTests {
         }
         
         // 1. Push a SET request
-        try await channel.writeInbound(Request(contents: ["SET", "stream_key", "stream_value"]))
+        try await channel.writeInbound(Request(contents: [makeBuf("SET"), makeBuf("stream_key"), makeBuf("stream_value")]))
         
         // 2. Read the response
         let setResponse = try await channel.waitForOutboundWrite(as: Response.self)
         #expect(setResponse.statusCode == .success)
-        #expect(setResponse.body == "OK")
+        #expect(getString(setResponse.body) == "OK")
         
         // 3. Push a GET request
-        try await channel.writeInbound(Request(contents: ["GET", "stream_key"]))
+        try await channel.writeInbound(Request(contents: [makeBuf("GET"), makeBuf("stream_key")]))
         
         // 4. Read the response
         let getResponse = try await channel.waitForOutboundWrite(as: Response.self)
         #expect(getResponse.statusCode == .success)
-        #expect(getResponse.body == "stream_value")
+        #expect(getString(getResponse.body) == "stream_value")
         
         // 5. Close inbound to finish the loop
         try await channel.testingEventLoop.executeInContext {
@@ -54,12 +65,12 @@ struct ConnectionHandlerTests {
         let handler = ConnectionHandler(store: store)
         
         // Pre-populate the actor
-        await store.set(key: "key1", value: "hello_world")
+        await store.set(key: makeBuf("key1"), value: makeBuf("hello_world"))
         
-        let request = Request(contents: ["GET", "key1"])
+        let request = Request(contents: [makeBuf("GET"), makeBuf("key1")])
         let response = await handler.process(request: request)
         
-        #expect(response.body == "hello_world")
+        #expect(getString(response.body) == "hello_world")
     }
 
     @Test
@@ -67,14 +78,15 @@ struct ConnectionHandlerTests {
         let store = KVStore()
         let handler = ConnectionHandler(store: store)
 
-        let request = Request(contents: ["SET", "key2", "new_value"])
+        let request = Request(contents: [makeBuf("SET"), makeBuf("key2"), makeBuf("new_value")])
         let response = await handler.process(request: request)
         
-        #expect(response.body == "OK")
+        #expect(getString(response.body) == "OK")
         
         // Verify the actor actually stored it
-        let storedValue = await store.get(key: "key2")
-        #expect(storedValue == "new_value")
+        let storedValue = await store.get(key: makeBuf("key2"))
+        #expect(storedValue != nil)
+        #expect(getString(storedValue!) == "new_value")
     }
     
     @Test
@@ -82,8 +94,8 @@ struct ConnectionHandlerTests {
         let store = KVStore()
         let handler = ConnectionHandler(store: store)
         
-        let response = await handler.process(request: Request(contents: ["GET"]))
-        #expect(response.body.starts(with: "ERROR"))
+        let response = await handler.process(request: Request(contents: [makeBuf("GET")]))
+        #expect(getString(response.body).starts(with: "ERROR"))
     }
 
     @Test
@@ -91,13 +103,13 @@ struct ConnectionHandlerTests {
         let store = KVStore()
         let handler = ConnectionHandler(store: store)
         
-        await store.set(key: "delete_me", value: "value")
+        await store.set(key: makeBuf("delete_me"), value: makeBuf("value"))
         
-        let response = await handler.process(request: Request(contents: ["DELETE", "delete_me"]))
+        let response = await handler.process(request: Request(contents: [makeBuf("DELETE"), makeBuf("delete_me")]))
         #expect(response.statusCode == .success)
-        #expect(response.body == "OK")
+        #expect(getString(response.body) == "OK")
         
-        let value = await store.get(key: "delete_me")
+        let value = await store.get(key: makeBuf("delete_me"))
         #expect(value == nil)
     }
 
@@ -106,9 +118,9 @@ struct ConnectionHandlerTests {
         let store = KVStore()
         let handler = ConnectionHandler(store: store)
         
-        let response = await handler.process(request: Request(contents: ["DELETE", "non_existent"]))
+        let response = await handler.process(request: Request(contents: [makeBuf("DELETE"), makeBuf("non_existent")]))
         #expect(response.statusCode == .keyNotFound)
-        #expect(response.body.contains("not found"))
+        #expect(getString(response.body).contains("not found"))
     }
 
     @Test
@@ -116,8 +128,8 @@ struct ConnectionHandlerTests {
         let store = KVStore()
         let handler = ConnectionHandler(store: store)
         
-        let response = await handler.process(request: Request(contents: ["UNKNOWN", "arg"]))
+        let response = await handler.process(request: Request(contents: [makeBuf("UNKNOWN"), makeBuf("arg")]))
         #expect(response.statusCode == .unrecognisedCommand)
-        #expect(response.body.contains("Unrecognised command"))
+        #expect(getString(response.body).contains("Unrecognised command"))
     }
 }

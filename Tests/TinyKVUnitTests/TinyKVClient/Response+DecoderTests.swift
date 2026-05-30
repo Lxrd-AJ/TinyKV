@@ -26,7 +26,7 @@ struct ResponseDecoderTests {
         }
 
         #expect(response.statusCode == .success)
-        #expect(response.body == "OK")
+        #expect(response.body.getString(at: response.body.readerIndex, length: response.body.readableBytes) == "OK")
 
         _ = try channel.finish()
     }
@@ -57,7 +57,7 @@ struct ResponseDecoderTests {
         }
 
         #expect(response.statusCode == .success)
-        #expect(response.body == "OK")
+        #expect(response.body.getString(at: response.body.readerIndex, length: response.body.readableBytes) == "OK")
 
         _ = try channel.finish()
     }

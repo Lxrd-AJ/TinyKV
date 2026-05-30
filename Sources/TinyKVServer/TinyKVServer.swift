@@ -5,10 +5,10 @@ import Foundation
 @main
 struct TinyKVServer {
     static func main() async throws {
-        let store = KVStore()
+        let engine: TinyKVEngine = TinyKVEngine()
         let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
         
-        let connectionHandler = ConnectionHandler(store: store)
+        let connectionHandler = ConnectionHandler(engine: engine)
         
         let bootstrap = ServerBootstrap(group: group)
             .serverChannelOption(ChannelOptions.backlog, value: 256)

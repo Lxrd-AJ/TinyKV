@@ -29,7 +29,7 @@ public final class ResponseDecoder: ByteToMessageDecoder {
         _ = buffer.readInteger(endianness: .little, as: UInt32.self)! // consumes 4 bytes
 
         // Read the body
-        guard let body = buffer.readString(length: Int(length)) else {
+        guard let body = buffer.readSlice(length: Int(length)) else {
             throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: [], debugDescription: "Failed to read response body"))
         }
 

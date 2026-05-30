@@ -5,8 +5,7 @@ public final class RequestDecoder: ByteToMessageDecoder {
     public typealias InboundOut = Request
     
     private var numStringsToRead: Int? = nil
-    // This is written for simplicity and clarity, but in a production implementation, we might want to avoid this copy by working with `ByteBuffer` slices directly in our command processing logic.
-    private var stringsRead: [String] = []
+    private var buffersRead: [ByteBuffer] = []
     
     public init() {}
 
@@ -26,7 +25,7 @@ public final class RequestDecoder: ByteToMessageDecoder {
         }
         let totalRequired = self.numStringsToRead!
 
-        while stringsRead.count < totalRequired {
+        while buffersRead.count < totalRequired {
             // Ensure we have enough for the current message
             // Check for string length header (4 bytes)
             guard buffer.readableBytes >= 4 else { return .needMoreData }
@@ -41,26 +40,21 @@ public final class RequestDecoder: ByteToMessageDecoder {
             // `length` could be Int.max, so to avoid overflow in the addition (4 + length), we work with the subtraction instead: we need at least `length` bytes after consuming the 4 bytes of the length header
             guard buffer.readableBytes - 4 >= length else { return .needMoreData }
 
-            // We have enough data! Consume the length header and the string
+            // We have enough data! Consume the length header and the slice
             _ = buffer.readInteger(endianness: .little, as: UInt32.self)! // consumes 4 bytes
-            // Creating a `String` from a `ByteBuffer` involves copying the data, which is not ideal for performance. In a production implementation, we might want to avoid this copy by working with `ByteBuffer` slices directly in our command processing logic. 
-            // e.g 
-            // ```
-            // let stringSlice = buffer.readSlice(length: length)! // This would give us a ByteBuffer slice without copying
-            // However, for simplicity and clarity in this example, we'll convert to `String`.
-            let string = buffer.readString(length: length)!
+            let slice = buffer.readSlice(length: length)!
 
-            stringsRead.append(string)
+            buffersRead.append(slice)
         }
 
         // Pass the decoded request to the next handler
         context.fireChannelRead(
-            self.wrapInboundOut(Request(contents: stringsRead))
+            self.wrapInboundOut(Request(contents: buffersRead))
         )
 
         // Reset state for the next request on this connection!
         self.numStringsToRead = nil
-        self.stringsRead.removeAll()
+        self.buffersRead.removeAll()
 
         return .continue
     }

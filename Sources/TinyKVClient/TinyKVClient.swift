@@ -6,18 +6,19 @@ final class SimpleClientHandler: ChannelInboundHandler, Sendable {
     typealias InboundIn = Response
     typealias OutboundOut = Request
     
-    let responsePromise: EventLoopPromise<String>?
+    let responsePromise: EventLoopPromise<ByteBuffer>?
+    private let allocator = ByteBufferAllocator()
 
-    init(promise: EventLoopPromise<String>? = nil) {
+    init(promise: EventLoopPromise<ByteBuffer>? = nil) {
         self.responsePromise = promise
     }
 
     func channelActive(context: ChannelHandlerContext) {
         let messages = [
-            Request(contents: ["GET", "key1"]),
-            Request(contents: ["SET", "key1", "value1"]),
-            Request(contents: ["UPDATE"]),
-            Request(contents: ["DELETE", "key1"])
+            Request(contents: [self.makeBuffer("GET"), self.makeBuffer("key1")]),
+            Request(contents: [self.makeBuffer("SET"), self.makeBuffer("key1"), self.makeBuffer("value1")]),
+            Request(contents: [self.makeBuffer("UPDATE")]),
+            Request(contents: [self.makeBuffer("DELETE"), self.makeBuffer("key1")])
         ]
 
         print("[Channel active]: Would send \(messages.count) entries")
@@ -34,11 +35,18 @@ final class SimpleClientHandler: ChannelInboundHandler, Sendable {
 
     func channelRead(context: ChannelHandlerContext, data: NIOAny) {
         let response = self.unwrapInboundIn(data)
-        print("Received: \(response.statusCode) - \(response.body)")
+        let responseBody = response.body.getString(at: 0, length: response.body.readableBytes)!
+        print("Received: \(response.statusCode) - \(responseBody)")
         responsePromise?.succeed(response.body)
         
         // Disconnect after receiving a response for testing purposes
         context.close(promise: nil)
+    }
+
+    private func makeBuffer(_ string: String) -> ByteBuffer {
+        var buffer = self.allocator.buffer(capacity: string.utf8.count)
+        buffer.writeString(string)
+        return buffer
     }
 
     func errorCaught(context: ChannelHandlerContext, error: Error) {

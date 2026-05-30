@@ -32,6 +32,7 @@ struct TinyKVIntegrationTests {
         }
         
         let port = serverChannel.channel.localAddress!.port!
+        let allocator = ByteBufferAllocator()
         
         let serverTask = Task {
             try await withThrowingDiscardingTaskGroup { taskGroup in
@@ -66,37 +67,48 @@ struct TinyKVIntegrationTests {
         }
         
         // 3. Connect and send a sequence of requests
-        await store.set(key: "integration_test_key", value: "success")
+        var testKeyBuf = allocator.buffer(capacity: 32)
+        testKeyBuf.writeString("integration_test_key")
+        var testValBuf = allocator.buffer(capacity: 32)
+        testValBuf.writeString("success")
+        await store.set(key: testKeyBuf, value: testValBuf)
         
         try await clientChannel.executeThenClose { inbound, outbound in
+            // Helper to make buffers
+            func makeBuf(_ s: String) -> ByteBuffer {
+                var b = allocator.buffer(capacity: s.utf8.count)
+                b.writeString(s)
+                return b
+            }
+
             // SET
-            try await outbound.write(Request(contents: ["SET", "multi_key", "multi_value"]))
+            try await outbound.write(Request(contents: [makeBuf("SET"), makeBuf("multi_key"), makeBuf("multi_value")]))
             
             // GET
-            try await outbound.write(Request(contents: ["GET", "multi_key"]))
+            try await outbound.write(Request(contents: [makeBuf("GET"), makeBuf("multi_key")]))
             
             // DELETE
-            try await outbound.write(Request(contents: ["DELETE", "multi_key"]))
+            try await outbound.write(Request(contents: [makeBuf("DELETE"), makeBuf("multi_key")]))
             
             var iterator = inbound.makeAsyncIterator()
             
             // Verify SET response
             if let response = try await iterator.next() {
-                #expect(response.body == "OK")
+                #expect(response.body.getString(at: response.body.readerIndex, length: response.body.readableBytes) == "OK")
             } else {
                 Issue.record("Did not receive SET response")
             }
             
             // Verify GET response
             if let response = try await iterator.next() {
-                #expect(response.body == "multi_value")
+                #expect(response.body.getString(at: response.body.readerIndex, length: response.body.readableBytes) == "multi_value")
             } else {
                 Issue.record("Did not receive GET response")
             }
             
             // Verify DELETE response
             if let response = try await iterator.next() {
-                #expect(response.body == "OK")
+                #expect(response.body.getString(at: response.body.readerIndex, length: response.body.readableBytes) == "OK")
             } else {
                 Issue.record("Did not receive DELETE response")
             }
