@@ -149,4 +149,30 @@ struct HashTableTests {
         
         #expect(weakHashTable == nil, "HashTable leaked memory: instance was not deallocated")
     }
+
+    @Test 
+    func canLookupItems() throws {
+        let hashTable = HashTable(capacity: 32)
+        let numItemsToAdd = 64
+        self.insert(numItemsToAdd, into: hashTable)
+
+        let randomKeyIndicesToLookup = (0..<5).map({ _ in Int.random(in: 0..<64) })
+        for randIdx in randomKeyIndicesToLookup {
+            let key = "key_\(randIdx)"
+            let returnedNodePtr = hashTable.lookup(key: key)
+
+            #expect(returnedNodePtr != nil, "The returned node should not be empty")
+            #expect(returnedNodePtr?.pointee.value.getString(at: 0, length: returnedNodePtr!.pointee.value.readableBytes) == "value_\(randIdx)")
+        }
+    }
+}
+
+extension HashTableTests {
+    private func insert(_ insertCount: Int, into hashTable: HashTable) {
+        for i in 0..<insertCount {
+            var buffer = self.allocator.buffer(capacity: 16)
+            buffer.writeString("value_\(i)")
+            hashTable.add(key: "key_\(i)", value: buffer)
+        }
+    }
 }

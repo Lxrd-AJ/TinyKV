@@ -50,20 +50,6 @@ class HashTable {
         free(self.buckets)
     }
 
-    static func allocateNode(key: String, value: ByteBuffer) -> UnsafeMutablePointer<HashNode> {
-        let hashCode = HashTable.hash(key)
-        let hashNode = HashNode(hashCode: hashCode, key: key, value: value)
-        let ptr = UnsafeMutablePointer<HashNode>.allocate(capacity: 1)
-        ptr.initialize(to: hashNode)
-
-        return ptr
-    }
-
-    static func deallocateNode(with ptr: UnsafeMutablePointer<HashNode>) {
-        ptr.deinitialize(count: 1)
-        ptr.deallocate()
-    }
-
     func insert(_ newNodePtr: UnsafeMutablePointer<HashNode>) {
         let idx = newNodePtr.pointee.hashCode & self.indexMask
 
@@ -99,11 +85,51 @@ class HashTable {
         self.count += 1
     }
 
+    func lookup(key: String) -> UnsafeMutablePointer<HashNode>? {
+        guard count > 0 else {
+            return nil
+        }
+
+        let idx = HashTable.hash(key) & self.indexMask
+        var currentNode = self.buckets[idx]
+        while let node = currentNode {
+            if node.pointee.key == key {
+                return node
+            }
+            currentNode = node.pointee.next
+        }
+
+        return nil
+    }
+}
+
+extension HashTable {
+    static func allocateNode(key: String, value: ByteBuffer) -> UnsafeMutablePointer<HashNode> {
+        let hashCode = HashTable.hash(key)
+        let hashNode = HashNode(hashCode: hashCode, key: key, value: value)
+        let ptr = UnsafeMutablePointer<HashNode>.allocate(capacity: 1)
+        ptr.initialize(to: hashNode)
+
+        return ptr
+    }
+
+    static func deallocateNode(with ptr: UnsafeMutablePointer<HashNode>) {
+        ptr.deinitialize(count: 1)
+        ptr.deallocate()
+    }
+
     /// Hash the key using the SipHash algorithm but modified to return only positive indices
     static func hash(_ key: String) -> Int {
         var hasher: Hasher = Hasher()
         hasher.combine(key)
 
         return hasher.finalize()
+    }
+
+    /// Convenience function for inserting an item into the hashtable
+    func add(key: String, value: ByteBuffer) {
+        self.insert(
+            HashTable.allocateNode(key: key, value: value)
+        )
     }
 }

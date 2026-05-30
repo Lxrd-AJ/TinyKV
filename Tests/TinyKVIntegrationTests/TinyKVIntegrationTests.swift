@@ -66,7 +66,7 @@ struct TinyKVIntegrationTests {
         }
         
         // 3. Connect and send a sequence of requests
-        try await store.set(key: "integration_test_key", value: "success")
+        await store.set(key: "integration_test_key", value: "success")
         
         try await clientChannel.executeThenClose { inbound, outbound in
             // SET
