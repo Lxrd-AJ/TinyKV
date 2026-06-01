@@ -15,13 +15,13 @@ class HashTable {
     // Store pointers to `HashNode`s instead of `HashNode`s directly to avoid unnecessary copying of the nodes when resizing the hash table.
     private(set) var buckets: UnsafeMutablePointer<UnsafeMutablePointer<HashNode>?>
 
-    // The bit mask (size - 1)
+    // The bit mask (capacity - 1)
     // The default module operator `index = hashCode % indexMask` is too slow on a CPU
     // Manipulating raw bits is faster, especially if the hash table size is a power of 2 as
     // `index = hashCode & indexMask` is extremely fast.
     private var indexMask: Int
     // The capacity of the hash table, which is always a power of 2.
-    private let capacity: Int
+    let capacity: Int
     private(set) var count: Int
 
     init(capacity: Int) {
@@ -91,10 +91,11 @@ class HashTable {
             return nil
         }
 
-        let idx = HashTable.hash(key) & self.indexMask
+        let keyHashCode = HashTable.hash(key)
+        let idx = keyHashCode & self.indexMask
         var currentNode = self.buckets[idx]
         while let node = currentNode {
-            if node.pointee.key == key {
+            if (keyHashCode == node.pointee.hashCode) && node.pointee.key == key {
                 return node
             }
             currentNode = node.pointee.next
@@ -103,8 +104,41 @@ class HashTable {
         return nil
     }
 
-    func delete(key: ByteBuffer) -> ByteBuffer? {
-        return nil
+    func delete(key: ByteBuffer) throws(TinyError) {
+        func delete(_ node: UnsafeMutablePointer<HashNode>) {
+            HashTable.deallocateNode(with: node)
+            self.count -= 1
+        }
+
+        let keyHashCode = HashTable.hash(key)
+        let idx = keyHashCode & self.indexMask
+
+        guard let headNode = self.buckets[idx] else {
+            throw TinyError.keyNotFound
+        }
+
+        if (keyHashCode == headNode.pointee.hashCode) && (headNode.pointee.key == key) {
+            // The head of the linked list is the one to be deleted
+            self.buckets[idx] = headNode.pointee.next
+            delete(headNode)
+            return
+        }else {
+            // The target node is **probably elsewhere in the linked list
+            var previousNode = headNode
+            var currentNode = previousNode.pointee.next
+            while let thisNode = currentNode {
+                if (keyHashCode == thisNode.pointee.hashCode) && (key == thisNode.pointee.key) {
+                    previousNode.pointee.next = thisNode.pointee.next
+                    delete(thisNode)
+                    return
+                }else{
+                    currentNode = thisNode.pointee.next
+                    previousNode = thisNode
+                }
+            }
+        }
+
+        throw TinyError.keyNotFound
     }
 }
 
@@ -123,7 +157,7 @@ extension HashTable {
         ptr.deallocate()
     }
 
-    /// Hash the key using the SipHash algorithm but modified to return only positive indices
+    /// Hash the key using the SipHash algorithm 
     static func hash(_ key: ByteBuffer) -> Int {
         var hasher: Hasher = Hasher()
         hasher.combine(key)
