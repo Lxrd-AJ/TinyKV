@@ -4,7 +4,6 @@ import TinyKVCommon
 /// Handles the lifecycle of a single client connection using modern async/await streams.
 struct ConnectionHandler: Sendable {
     let engine: TinyKVEngine
-    private let allocator = ByteBufferAllocator()
 
     init(engine: TinyKVEngine) {
         self.engine = engine

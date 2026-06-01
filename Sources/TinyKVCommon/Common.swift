@@ -27,86 +27,11 @@ struct KVStore {
         store.add(key: key, value: value)
     }
 
-    public func delete(key: ByteBuffer) -> ByteBuffer? {
-        return store.delete(key: key)
+    public func delete(key: ByteBuffer) throws(TinyError) {
+        return try store.delete(key: key)
     }
 }
 
-public actor TinyKVEngine {
-    private let store: KVStore = KVStore()
-    private let allocator = ByteBufferAllocator()
-
-    public init() {}
-
-    internal func _testOnlyGet(key: ByteBuffer) -> ByteBuffer? {
-        return self.store.get(key: key)
-    }
-
-    internal func _testOnlySet(key: ByteBuffer, value: ByteBuffer) {
-        self.store.set(key: key, value: value)
-    }
-
-    internal func _testOnlyDelete(key: ByteBuffer) -> ByteBuffer? {
-        return self.store.delete(key: key)
-    }
-
-    private func makeBuffer(_ string: String) -> ByteBuffer {
-        var buffer = self.allocator.buffer(capacity: string.utf8.count)
-        buffer.writeString(string)
-        return buffer
-    }
-
-    public func process(_ request: Request) -> Response {
-        guard let commandBuf = request.contents.first,
-              let command = commandBuf.getString(at: commandBuf.readerIndex, length: commandBuf.readableBytes)?.uppercased() else {
-            return Response(statusCode: .emptyRequest, body: self.makeBuffer("ERROR: Empty request"))
-        }
-
-        switch command {
-            case "GET":
-                guard request.contents.count == 2 else {
-                    return Response(statusCode: .badRequest, body: self.makeBuffer("ERROR: GET requires exactly 1 argument"))
-                }
-                let key = request.contents[1]
-                let value = self.store.get(key: key)
-                if let value = value {
-                    return Response(statusCode: .success, body: value)
-                } else {
-                    // We need to keep the key as a string for the error message
-                    let keyStr = key.getString(at: key.readerIndex, length: key.readableBytes) ?? "unknown"
-                    return Response(
-                        statusCode: .success,
-                        body: self.makeBuffer("ERROR: Key '\(keyStr)' not found")
-                    )
-                }
-
-            case "SET":
-                guard request.contents.count == 3 else {
-                    return Response(statusCode: .badRequest, body: self.makeBuffer("ERROR: SET requires exactly 2 arguments"))
-                }
-                let key = request.contents[1]
-                let value = request.contents[2]
-                store.set(key: key, value: value)
-                return Response(statusCode: .success, body: self.makeBuffer("OK"))
-
-            case "DELETE":
-                guard request.contents.count == 2 else {
-                    return Response(statusCode: .badRequest, body: self.makeBuffer("ERROR: DELETE requires exactly 1 argument"))
-                }
-                let key = request.contents[1]
-                let deleted = store.delete(key: key)
-                if deleted != nil {
-                    return Response(statusCode: .success, body: self.makeBuffer("OK"))
-                } else {
-                    let keyStr = key.getString(at: key.readerIndex, length: key.readableBytes) ?? "unknown"
-                    return Response(statusCode: .keyNotFound, body: self.makeBuffer("ERROR: Key '\(keyStr)' not found"))
-                }
-
-            default:
-                return Response(statusCode: .unrecognisedCommand, body: self.makeBuffer("ERROR: Unrecognised command '\(command)'"))
-        }
-    }
-}
 
 public enum ResponseStatus: UInt8, Sendable {
     case success = 0
@@ -133,4 +58,8 @@ public struct Response: Sendable {
         self.statusCode = statusCode
         self.body = body
     }
+}
+
+public enum TinyError: Error {
+    case keyNotFound
 }
