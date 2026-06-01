@@ -1,29 +1,36 @@
 import Foundation
 import NIOCore
 
-struct HashNode {
-    // The hash value returned from the `hash` function. So that we don't have to perform
-    // a re-hash `hash(key)` every time the hash table gets resized.
-    let hashCode: Int
-    let key: ByteBuffer
-    var value: ByteBuffer
-    var next: UnsafeMutablePointer<HashNode>?
-}
-
-class HashTable {
-    // The buckets of the hash table. Each bucket is a linked list of `HashNode`s to handle collisions.
-    // Store pointers to `HashNode`s instead of `HashNode`s directly to avoid unnecessary copying of the nodes when resizing the hash table.
+/// A fixed-size hash table using separate chaining for collision resolution.
+///
+/// This implementation is inspired by Redis's `dictht` structure. It uses manual heap
+/// allocation and raw pointers to minimize the overhead of Swift's ARC and to provide
+/// predictable, low-level performance.
+///
+/// - Important: This class does not resize itself. It is intended to be managed by a
+///   higher-level `HashMap` that orchestrates progressive rehashing between two instances.
+class HashTable: Datastorage {
+    /// The buckets of the hash table. Each bucket is a linked list of `HashNode`s.
+    ///
+    /// We store pointers to `HashNode`s to avoid unnecessary copying when moving nodes
+    /// during migration or insertion. Memory is managed manually via `calloc` and `free`.
     private(set) var buckets: UnsafeMutablePointer<UnsafeMutablePointer<HashNode>?>
 
-    // The bit mask (capacity - 1)
-    // The default module operator `index = hashCode % indexMask` is too slow on a CPU
-    // Manipulating raw bits is faster, especially if the hash table size is a power of 2 as
-    // `index = hashCode & indexMask` is extremely fast.
+    /// The bit mask used for index calculation (capacity - 1).
+    ///
+    /// Since the capacity is always a power of 2, we use `hashCode & indexMask`
+    /// instead of the modulo operator `%` for significantly faster indexing.
     private var indexMask: Int
-    // The capacity of the hash table, which is always a power of 2.
+
+    /// The fixed capacity of this hash table instance, which must be a power of 2.
     let capacity: Int
+
+    /// The total number of elements currently stored in the table.
     private(set) var count: Int
 
+    /// Initializes a new fixed-size hash table.
+    ///
+    /// - Parameter capacity: The number of buckets. Must be a power of 2.
     init(capacity: Int) {
         let isPowerOfTwo = (capacity & (capacity - 1)) == 0
         precondition(capacity > 0 && isPowerOfTwo, "`capacity` must be a power of 2")
