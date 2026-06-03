@@ -1,0 +1,64 @@
+name: TinyKV CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test-linux:
+    name: Test (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: '6.0'
+      - name: Build
+        run: swift build
+      - name: Run tests
+        run: swift test
+
+  test-macos:
+    name: Test (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.5.app/Contents/Developer
+      - name: Build
+        run: swift build
+      - name: Run tests
+        run: swift test
+
+  test-windows:
+    name: Test (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: '6.0'
+      - name: Build
+        run: swift build
+      - name: Run tests
+        run: swift test
+
+  test-ios:
+    name: Test (iOS)
+    runs-on: macos-latest
+    # Disabled: Xcode/SPM on iOS cannot expose modules from .executableTargets to test targets.
+    if: false 
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.5.app/Contents/Developer
+      - name: Run tests on iOS Simulator
+        run: |
+          xcodebuild test \
+            -scheme TinyKV-Package \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
+            -skipPackagePluginValidation

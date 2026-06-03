@@ -44,7 +44,15 @@ class HashMap: Datastorage {
     /// - Parameter key: The `ByteBuffer` containing the key.
     /// - Throws: `TinyError.keyNotFound` if the key does not exist.
     func delete(key: ByteBuffer) throws(TinyError) {
-        // TODO
+        do{
+            try self.newerHashTable.delete(key: key)
+        }catch{
+            guard let oldHashTable = self.oldHashTable else {
+                throw .keyNotFound
+            }
+
+            try oldHashTable.delete(key: key)
+        }
     }
 }
 

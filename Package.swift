@@ -4,7 +4,8 @@ import PackageDescription
 let package = Package(
     name: "TinyKV",
     platforms: [
-        .macOS(.v14)
+        .macOS(.v15),
+        .iOS(.v18)
     ],
     products: [
         .library(name: "TinyKVCommon", targets: ["TinyKVCommon"]),

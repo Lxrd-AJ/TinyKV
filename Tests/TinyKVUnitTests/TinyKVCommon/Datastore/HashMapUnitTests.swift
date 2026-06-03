@@ -70,6 +70,60 @@ struct HashMapUnitTests {
             #expect(result?.pointee.value == newValue)
         }
     }
+
+    struct delete {
+        @Test
+        func testDeleteKeyInNewerTable() throws {
+            let specimen = createSpecimen()
+            let key = ByteBuffer(string: "key1")
+            
+            // TODO: Replace with insert method
+            specimen.newerHashTable.add(key: key, value: ByteBuffer(string: "value1"))
+            
+            // Verify it exists before deletion
+            #expect(specimen.lookup(key: key) != nil)
+            
+            try specimen.delete(key: key)
+            
+            // Verify it is gone
+            #expect(specimen.lookup(key: key) == nil)
+        }
+        
+        @Test
+        func testDeleteKeyInOldTableDuringRehash() throws {
+            let specimen = createSpecimen()
+            let key = ByteBuffer(string: "oldKey")
+            
+            // TODO: Recreate the triggering mechanism
+            specimen.triggerRehashing()
+            specimen.oldHashTable?.add(key: key, value: ByteBuffer(string: "oldValue"))
+            
+            #expect(specimen.lookup(key: key) != nil)
+            
+            try specimen.delete(key: key)
+            
+            #expect(specimen.lookup(key: key) == nil)
+        }
+        
+        @Test
+        func testDeleteNonExistentKey() {
+            let specimen = createSpecimen()
+            let key = ByteBuffer(string: "missing")
+            
+            #expect(throws: TinyError.keyNotFound) {
+                try specimen.delete(key: key)
+            }
+
+            // Insert some dummy items
+            // TODO: Replace with insert method
+            specimen.newerHashTable.add(key: ByteBuffer(string: "<key1>"), value: ByteBuffer(string: "value1"))
+            specimen.oldHashTable?.add(key: ByteBuffer(string: "<key2>"), value: ByteBuffer(string: "oldValue"))
+
+            #expect(throws: TinyError.keyNotFound) {
+                try specimen.delete(key: key)
+            }
+        }
+    }
 }
 
 func createSpecimen(capacity: UInt = 8) -> HashMap {
