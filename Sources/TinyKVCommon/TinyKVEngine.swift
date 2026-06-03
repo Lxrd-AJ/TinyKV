@@ -25,6 +25,18 @@ public actor TinyKVEngine {
         return buffer
     }
 
+    /// Similar to `process` but designed to be used in a local context
+    /// e.g 
+    /// ```
+    /// let kv = TinyKVEngine()
+    /// await kv.execute(command: ["SET", "user:1", "aj"])
+    /// let result = await kv.execute(command: ["GET", "user:1"])
+    /// ```
+    /// Other methods like `ft`, `set`, `get` can also be exposed here
+    public func execute(command: String) {
+        // TODO:
+    }
+
     public func process(_ request: Request) -> Response {
         guard let commandBuf = request.contents.first,
               let command = commandBuf.getString(at: commandBuf.readerIndex, length: commandBuf.readableBytes)?.uppercased() else {

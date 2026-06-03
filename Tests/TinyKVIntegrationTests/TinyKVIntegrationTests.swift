@@ -108,10 +108,7 @@ struct TinyKVIntegrationTests {
             
             // Verify DELETE response
             if let response = try await iterator.next() {
-                // TODO: Fix this test once HashTable.delete is implemented
-                withKnownIssue("DELETE is not yet implemented in HashTable") {
-                    #expect(response.body.getString(at: response.body.readerIndex, length: response.body.readableBytes) == "OK")
-                }
+                #expect(response.body.getString(at: response.body.readerIndex, length: response.body.readableBytes) == "OK")
             } else {
                 Issue.record("Did not receive DELETE response")
             }

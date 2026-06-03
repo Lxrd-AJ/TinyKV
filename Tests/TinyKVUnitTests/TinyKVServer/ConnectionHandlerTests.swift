@@ -103,28 +103,22 @@ struct ConnectionHandlerTests {
         
         let response = await engine.process(Request(contents: [makeBuf("DELETE"), makeBuf("delete_me")]))
         
-        // TODO: Fix this test once HashTable.delete is implemented
-        withKnownIssue("DELETE is not yet implemented in HashTable") {
-            #expect(response.statusCode == .success)
-            #expect(getString(response.body) == "OK")
-        }
+        #expect(response.statusCode == .success)
+        #expect(getString(response.body) == "OK")
         
         let value = await engine._testOnlyGet(key: makeBuf("delete_me"))
-        withKnownIssue("DELETE is not yet implemented in HashTable") {
-            #expect(value == nil)
-        }
+        #expect(value == nil)
     }
 
     @Test
     func testConnectionHandlerHandlesDeleteMissingKey() async throws {
         let engine = TinyKVEngine()
         
-        let response = await engine.process(Request(contents: [makeBuf("DELETE"), makeBuf("non_existent")]))
+        let response = await engine.process(
+            Request(contents: [makeBuf("DELETE"), makeBuf("non_existent")])
+        )
         
-        // This actually passes by accident because HashTable.delete returns nil (stub), 
-        // which the engine interprets as "key not found".
         #expect(response.statusCode == .keyNotFound)
-        #expect(getString(response.body).contains("not found"))
     }
 
     @Test

@@ -33,8 +33,11 @@ class HashMap: Datastorage {
     }
     
     func lookup(key: ByteBuffer) -> UnsafeMutablePointer<HashNode>? {
-        // TODO:
-        return nil
+        // Search both hash tables for the given `key`
+        guard let item = self.newerHashTable.lookup(key: key) else {
+            return self.oldHashTable?.lookup(key: key)
+        }
+        return item
     }
     
     /// Deletes a key-value pair from the storage.
@@ -42,5 +45,13 @@ class HashMap: Datastorage {
     /// - Throws: `TinyError.keyNotFound` if the key does not exist.
     func delete(key: ByteBuffer) throws(TinyError) {
         // TODO
+    }
+}
+
+extension HashMap {
+    func triggerRehashing() {
+        self.oldHashTable = self.newerHashTable
+        self.newerHashTable = HashTable(capacity: self.oldHashTable!.capacity * 2)
+        self.migrationIdx = 0
     }
 }
