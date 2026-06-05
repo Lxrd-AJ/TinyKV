@@ -16,6 +16,8 @@ jobs:
         uses: swift-actions/setup-swift@v3
         with:
           swift-version: '6.0'
+      - name: Install jemalloc
+        run: sudo apt-get install -y libjemalloc-dev
       - name: Build
         run: swift build
       - name: Run tests
@@ -26,8 +28,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_26.5.app/Contents/Developer
+      # - name: Select Xcode
+      #   run: sudo xcode-select -s /Applications/Xcode_26.5.app/Contents/Developer
       - name: Build
         run: swift build
       - name: Run tests
