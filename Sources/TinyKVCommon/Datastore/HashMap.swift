@@ -29,7 +29,7 @@ class HashMap: Datastorage {
     }
 
     func insert(_ newNodePtr: UnsafeMutablePointer<HashNode>) {
-        // TODO:
+        // Insertion always goes to the newer hash table
     }
     
     func lookup(key: ByteBuffer) -> UnsafeMutablePointer<HashNode>? {
@@ -58,6 +58,8 @@ class HashMap: Datastorage {
 
 extension HashMap {
     func triggerRehashing() {
+        // Migrate the contents of the current hashtable `self.newerHashTable` to the older one
+        // and create a new double-sized `self.newerHashTable`
         self.oldHashTable = self.newerHashTable
         self.newerHashTable = HashTable(capacity: self.oldHashTable!.capacity * 2)
         self.migrationIdx = 0
