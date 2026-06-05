@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-permissions:
-  actions: write
-
 jobs:
   test-linux:
     name: Test (Linux)
@@ -16,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup Swift
-        uses: swift-actions/setup-swift@v2
+        uses: swift-actions/setup-swift@v3
         with:
           swift-version: '6.0'
       - name: Build
@@ -42,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup Swift
-        uses: swift-actions/setup-swift@v2
+        uses: swift-actions/setup-swift@v3
         with:
           swift-version: '6.0'
       - name: Build
