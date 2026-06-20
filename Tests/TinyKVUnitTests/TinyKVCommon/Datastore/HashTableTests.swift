@@ -38,12 +38,12 @@ struct HashTableTests {
         let hashTable = HashTable(capacity: 16)
         
         let entry1 = KVPair(key: "test_key", value: "value_1", allocator: self.allocator)
-        hashTable.add(key: entry1.rawKey, value: entry1.rawValue)
+        hashTable.insert(key: entry1.rawKey, value: entry1.rawValue)
         #expect(hashTable.count == 1)
         
         // Insert update
         let entry2 = KVPair(key: "test_key", value: "value_2", allocator: self.allocator)
-        hashTable.add(key: entry2.rawKey, value: entry2.rawValue)
+        hashTable.insert(key: entry2.rawKey, value: entry2.rawValue)
         
         // Count should remain the same
         #expect(hashTable.count == 1)
@@ -158,7 +158,7 @@ struct HashTableTests {
         func canDeleteNodeAtLinkedListHead() throws {
             let capacity = 64
             let specimen = HashTable(capacity: capacity)
-            let entries = HashTableTests.insert(1, into: specimen, using: self.allocator)
+            let entries = TinyKVUnitTests.insert(1, into: specimen, using: self.allocator)
             #expect(maxChainLength(for: specimen) == 1, "There should be no collisions")
 
             let entry = entries[0]
@@ -177,7 +177,7 @@ struct HashTableTests {
             let numInsertions = 64
             let specimen = HashTable(capacity: capacity)
             // Ensure there are collisions in this hash table
-            let entries = HashTableTests.insert(numInsertions, into: specimen, using: self.allocator)
+            let entries = TinyKVUnitTests.insert(numInsertions, into: specimen, using: self.allocator)
 
             let entry1 = entries[9]
             try specimen.delete(key: entry1.rawKey)
@@ -195,7 +195,7 @@ struct HashTableTests {
             let capacity = 8
             let numInsertions = 64
             let specimen = HashTable(capacity: capacity)
-            let entries = HashTableTests.insert(numInsertions, into: specimen, using: self.allocator)
+            let entries = TinyKVUnitTests.insert(numInsertions, into: specimen, using: self.allocator)
 
             // Because inserts are prepended, the very first item inserted
             // will be pushed to the tail of whichever bucket it lands in.
@@ -242,7 +242,7 @@ struct HashTableTests {
                 try specimen.delete(key: key)
             }
 
-            HashTableTests.insert(64, into: specimen, using: self.allocator)
+            TinyKVUnitTests.insert(64, into: specimen, using: self.allocator)
             #expect(throws: TinyError.keyNotFound, performing: {
                 try specimen.delete(key: key)
             })
@@ -252,19 +252,8 @@ struct HashTableTests {
 
 extension HashTableTests {
     @discardableResult
-    static func insert(_ insertCount: Int, into hashTable: HashTable, using allocator: ByteBufferAllocator) -> [KVPair] {
-        var entries: [KVPair] = []
-        for i in 0..<insertCount {
-            let pair = KVPair(key: "key_\(i)", value: "value_\(i)", allocator: allocator)
-            hashTable.add(key: pair.rawKey, value: pair.rawValue)
-            entries.append(pair)
-        }
-        return entries
-    }
-
-    @discardableResult
     private func insert(_ insertCount: Int, into hashTable: HashTable) -> [KVPair] {
-        return HashTableTests.insert(insertCount, into: hashTable, using: self.allocator)
+        return TinyKVUnitTests.insert(insertCount, into: hashTable, using: self.allocator)
     }
 }
 
@@ -287,22 +276,5 @@ func maxChainLength(for hashTable: HashTable) -> Int {
 func verifyAllBucketsAreNil(hashTable: HashTable) {
     for idx in 0..<hashTable.capacity {
         #expect(hashTable.buckets[idx] == nil, "Bucket \(idx) should be empty")
-    }
-}
-
-struct KVPair {
-    let key: String
-    let value: String
-    private(set) var rawKey: ByteBuffer
-    private(set) var rawValue: ByteBuffer
-
-    init(key: String, value: String, allocator: ByteBufferAllocator) {
-        self.key = key
-        self.value = value
-
-        self.rawKey = allocator.buffer(capacity: 16)
-        self.rawKey.writeString(key)
-        self.rawValue = allocator.buffer(capacity: 16)
-        self.rawValue.writeString(value)
     }
 }

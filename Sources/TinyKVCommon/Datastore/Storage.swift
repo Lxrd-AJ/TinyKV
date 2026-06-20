@@ -21,8 +21,9 @@ struct HashNode {
 /// A protocol defining the core operations for a key-value storage engine.
 protocol Datastorage {
     /// Inserts a new node into the storage.
-    /// - Parameter newNodePtr: A pointer to the `HashNode` to be inserted.
-    func insert(_ newNodePtr: UnsafeMutablePointer<HashNode>)
+    /// - Parameter key: The `ByteBuffer` containing the key.
+    /// - Parameter value: The `ByteBuffer` containing the value.
+    func insert(key: ByteBuffer, value: ByteBuffer)
     
     /// Looks up a value by its key.
     /// - Parameter key: The `ByteBuffer` containing the key.

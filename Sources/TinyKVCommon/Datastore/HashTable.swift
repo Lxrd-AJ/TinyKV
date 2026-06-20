@@ -93,6 +93,12 @@ class HashTable: Datastorage {
         self.count += 1
     }
 
+    func insert(key: ByteBuffer, value: ByteBuffer) {
+        self.insert(
+            HashTable.allocateNode(key: key, value: value)
+        )
+    }
+
     func lookup(key: ByteBuffer) -> UnsafeMutablePointer<HashNode>? {
         guard count > 0 else {
             return nil
@@ -170,12 +176,5 @@ extension HashTable {
         hasher.combine(key)
 
         return hasher.finalize()
-    }
-
-    /// Convenience function for inserting an item into the hashtable
-    func add(key: ByteBuffer, value: ByteBuffer) {
-        self.insert(
-            HashTable.allocateNode(key: key, value: value)
-        )
     }
 }

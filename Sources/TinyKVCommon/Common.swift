@@ -2,7 +2,13 @@ import Foundation
 import NIO
 
 public let PORT: Int = 6379
+/// The maximum size in bytes that a request can contain
 public let MAX_PAYLOAD_SIZE: Int = 512 * 1024 * 1024 // 512 MB
+/// A factor used to determine the threshold for migrating to a new hashtable. Typically used to 
+/// define a threshold as `threshold = hashmap.capacity * MAX_LOAD_FACTOR`
+let MAX_LOAD_FACTOR: Int = 8
+/// A fixed amount of items to progressively migrate from the older hashtable to the newer one.
+let AMOUNT_MIGRATION_WORK: Int = 124
 
 public struct Message: Sendable {
     public let contents: String
@@ -24,7 +30,7 @@ struct KVStore {
     }
 
     public func set(key: ByteBuffer, value: ByteBuffer) {
-        store.add(key: key, value: value)
+        store.insert(key: key, value: value)
     }
 
     public func delete(key: ByteBuffer) throws(TinyError) {
