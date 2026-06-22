@@ -5,7 +5,7 @@ import NIO
 ///
 /// This structure mirrors a C-style linked list node used for collision handling.
 /// It stores a pre-computed hash code to avoid expensive re-hashing during table resizes.
-struct HashNode {
+struct HashNode: Equatable {
     /// The hash value returned from the `hash` function.
     /// Stored to ensure that resizing the hash table only requires bitwise operations
     /// rather than re-calculating the hash for every key.

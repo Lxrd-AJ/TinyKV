@@ -10,19 +10,17 @@ let MAX_LOAD_FACTOR: Int = 8
 /// A fixed amount of items to progressively migrate from the older hashtable to the newer one.
 let AMOUNT_MIGRATION_WORK: Int = 124
 
-public struct Message: Sendable {
-    public let contents: String
 
-    public init(contents: String) {
-        self.contents = contents
-    }
+public enum TinyError: Error {
+    case keyNotFound
 }
 
-struct KVStore {
-    private let store: HashTable
 
-    public init(capacity: Int = 1024) {
-        self.store = HashTable(capacity: capacity)
+public struct KVStore {
+    private let store: Datastorage
+
+    public init(capacity: UInt = 1024) {
+        self.store = HashMap(capacity: capacity)
     }
 
     public func get(key: ByteBuffer) -> ByteBuffer? {
@@ -64,8 +62,4 @@ public struct Response: Sendable {
         self.statusCode = statusCode
         self.body = body
     }
-}
-
-public enum TinyError: Error {
-    case keyNotFound
 }
