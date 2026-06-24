@@ -24,7 +24,7 @@ public struct KVStore {
     }
 
     public func get(key: ByteBuffer) -> ByteBuffer? {
-        return store.lookup(key: key)?.pointee.value
+        return store.lookup(key: key)
     }
 
     public func set(key: ByteBuffer, value: ByteBuffer) {

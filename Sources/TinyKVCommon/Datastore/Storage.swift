@@ -28,7 +28,7 @@ protocol Datastorage {
     /// Looks up a value by its key.
     /// - Parameter key: The `ByteBuffer` containing the key.
     /// - Returns: A pointer to the `HashNode` if found, otherwise `nil`.
-    func lookup(key: ByteBuffer) -> UnsafeMutablePointer<HashNode>?
+    func lookup(key: ByteBuffer) -> ByteBuffer?
     
     /// Deletes a key-value pair from the storage.
     /// - Parameter key: The `ByteBuffer` containing the key.

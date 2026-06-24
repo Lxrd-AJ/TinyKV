@@ -26,6 +26,12 @@ public actor TinyKVEngine {
         return buffer
     }
 
+    private func makeBuffer(_ int: Int) -> ByteBuffer {
+        var buffer = self.allocator.buffer(capacity: Int(int.bitWidth / 8))
+        buffer.writeInteger(int)
+        return buffer
+    }
+
     /// Similar to `process` but designed to be used in a local context
     /// e.g 
     /// ```

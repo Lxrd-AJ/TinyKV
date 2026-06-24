@@ -16,7 +16,7 @@ struct HashMapUnitTests {
             
             let result = hashMap.lookup(key: key)
             #expect(result != nil)
-            #expect(result?.pointee.value == value)
+            #expect(result == value)
         }
         
         @Test
@@ -31,7 +31,7 @@ struct HashMapUnitTests {
             
             let result = hashMap.lookup(key: key)
             #expect(result != nil)
-            #expect(result?.pointee.value == value)
+            #expect(result == value)
         }
         
         @Test
@@ -60,8 +60,8 @@ struct HashMapUnitTests {
             
             let result = specimen.lookup(key: key)
             #expect(result != nil)
-            #expect(result?.pointee.value == newValue, 
-                "'\(result!.pointee.value.getString(at: 0, length: oldValue.readableBytes))' should be equal to '\(newValue.getString(at:0, length: newValue.readableBytes))'"
+            #expect(result == newValue, 
+                "'\(result!.getString(at: 0, length: oldValue.readableBytes) ?? "")' should be equal to '\(newValue.getString(at:0, length: newValue.readableBytes) ?? "")'"
             )
         }
     }

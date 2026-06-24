@@ -147,7 +147,7 @@ struct HashTableTests {
             let returnedNodePtr = hashTable.lookup(key: keyBuffer)
 
             #expect(returnedNodePtr != nil, "The returned node should not be empty")
-            #expect(returnedNodePtr?.pointee.value.getString(at: 0, length: returnedNodePtr!.pointee.value.readableBytes) == "value_\(randIdx)")
+            #expect(returnedNodePtr?.getString(at: 0, length: returnedNodePtr!.readableBytes) == "value_\(randIdx)")
         }
     }
 
