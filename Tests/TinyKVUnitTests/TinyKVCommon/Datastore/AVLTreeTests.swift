@@ -115,6 +115,39 @@ struct AVLTreeUnitTests {
         #expect(C.left === B)
         #expect(C.right === A)
     }
+
+    @Test func testTreeInsert() throws {
+        let tree = AVLTree()
+        
+        // Insert nodes that will cause a right-heavy straight line (Right-Right)
+        tree.insert(score: 10, member: self.stringBuffer("A"))
+        tree.insert(score: 20, member: self.stringBuffer("B"))
+        tree.insert(score: 30, member: self.stringBuffer("C"))
+        
+        // The tree should have balanced itself with a Left Rotation
+        // B should be root, A on left, C on right
+        let root = try #require(tree.rootNode)
+        #expect(root.score == 20)
+        #expect(root.left?.score == 10)
+        #expect(root.right?.score == 30)
+        
+        // Heights should be perfectly balanced
+        #expect(root.height == 2)
+        #expect(root.left?.height == 1)
+        #expect(root.right?.height == 1)
+        
+        // Insert nodes that cause a Left-Right zigzag on the left subtree
+        tree.insert(score: 5, member: self.stringBuffer("D"))
+        tree.insert(score: 7, member: self.stringBuffer("E"))
+        
+        // The subtree at Node A (score 10) should have automatically balanced 
+        // using a double rotation (rotate left on 5, rotate right on 10)
+        // 7 should become the new left child of the root
+        let newLeftChild = try #require(root.left)
+        #expect(newLeftChild.score == 7)
+        #expect(newLeftChild.left?.score == 5)
+        #expect(newLeftChild.right?.score == 10)
+    }
 }
 
 extension AVLTreeUnitTests{

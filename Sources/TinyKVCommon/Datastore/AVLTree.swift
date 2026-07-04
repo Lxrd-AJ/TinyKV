@@ -51,7 +51,7 @@ class AVLTree {
     var rootNode: AVLNode?
 
     func insert(score: Double, member: ByteBuffer) {
-        // TODO:
+        self.rootNode = treeInsert(into: self.rootNode, target: (score, member))
     }
     
     func lookup(score: Double, member: ByteBuffer) -> AVLNode? {
@@ -70,6 +70,33 @@ class AVLTree {
 
 extension AVLTree {
     typealias ReplacementNode = AVLNode
+
+    /// Recursive tree insertion
+    private func treeInsert(into node: AVLNode?, target: (score: Double, member: ByteBuffer)) -> AVLNode {
+        // Handle the base case where we've found an empty slot to insert the new entry
+        guard var node = node else {
+            return AVLNode(score: target.score, member: target.member)
+        }
+
+        // Handle the descent down the call stack
+        let comparison = node.compares(toScore: target.score, targetMember: target.member)
+        if comparison > 0 {
+            // The target needs to be inserted in the left subtree as it is smaller than `node`
+            let leftSubtree = treeInsert(into: node.left, target: target)
+            node.left = leftSubtree
+        }else if comparison < 0 {
+            // `target` needs to go in the right subtree
+            let rightSubtree = treeInsert(into: node.right, target: target)
+            node.right = rightSubtree
+        }else{
+            // `node` and target are the same, perform no operation
+            return node
+        }
+
+        node.update()
+        node = try! balance(node)
+        return node
+    }
 
     private func treeSearch(from node: AVLNode?, target: (score: Double, member: ByteBuffer)) -> AVLNode? {
         // TODO:
