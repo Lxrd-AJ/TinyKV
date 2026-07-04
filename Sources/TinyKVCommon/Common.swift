@@ -63,3 +63,12 @@ public struct Response: Sendable {
         self.body = body
     }
 }
+
+extension ByteBuffer: @retroactive Comparable {
+    // (ByteBuffer already implements `==` via NIOCore, so we only need to provide `<` to satisfy Comparable)
+    public static func < (lhs: ByteBuffer, rhs: ByteBuffer) -> Bool {
+        // .readableBytesView gives us a Collection of UInt8 bytes,
+        // which Swift natively knows how to sort lexicographically!
+        return lhs.readableBytesView.lexicographicallyPrecedes(rhs.readableBytesView)
+    }
+}

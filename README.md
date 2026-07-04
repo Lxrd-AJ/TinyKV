@@ -41,6 +41,9 @@ Future plans include:
 * **SIMD-Accelerated Vector Math & Specialized Indexing:** Implementing HNSW and utilizing Apple's `Accelerate` framework, MLX, or `simd` types for parallelized vector distance calculations (cosine similarity, dot product).
 * **Native AI Commands:** Extending the parsing engine to support commands like `FT.SEARCH` and custom commands such as `AI.SET user:1 "Text to embed"`, utilizing the local Neural Engine/GPU to generate and index vectors natively—removing massive network and processing bottlenecks for local AI agents.
 
+# Future Extensions
+* Investigate Hopscotch algorithm for collision resolution, see https://github.com/Tessil/hopscotch-map 
+
 ## 📄 License
 
 This project is licensed under the terms of the license found in the [LICENSE](LICENSE) file.
