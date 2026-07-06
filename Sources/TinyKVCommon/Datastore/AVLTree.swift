@@ -38,7 +38,7 @@ final class AVLNode {
         if self.score < targetScore { return -1 }
         if self.score > targetScore { return 1 }
 
-         // 2. Secondary Sort: Lexicographical tie-breaker using our new Comparable conformance
+         // 2. Secondary Sort: Lexicographical tie-breaker using our `ByteBuffer`'s Comparable conformance
         if self.member < targetMember { return -1 }
         if self.member > targetMember { return 1 }
 
@@ -48,7 +48,7 @@ final class AVLNode {
 }
 
 class AVLTree {
-    var rootNode: AVLNode?
+    private(set) var rootNode: AVLNode?
 
     func insert(score: Double, member: ByteBuffer) {
         self.rootNode = treeInsert(into: self.rootNode, target: (score, member))
@@ -99,8 +99,16 @@ extension AVLTree {
     }
 
     private func treeSearch(from node: AVLNode?, target: (score: Double, member: ByteBuffer)) -> AVLNode? {
-        // TODO:
-        return nil
+        guard let node = node else { return nil }
+        let r = node.compares(toScore: target.score, targetMember: target.member)
+
+        if r < 0 { // node < target
+            return treeSearch(from: node.right, target: target)
+        }else if r > 0 { // node > target
+            return treeSearch(from: node.left, target: target)
+        }else{ // node == target
+            return node
+        }
     }
 
     private func treeDelete(from: AVLNode, target: (score: Double, member: ByteBuffer)) throws(TinyError) -> ReplacementNode? {
@@ -191,5 +199,30 @@ extension AVLTree {
         replacementNode.update()
 
         return replacementNode
+    }
+}
+
+// MARK: - Pretty Print
+extension AVLTree {
+    public func prettyPrint() {
+        guard let root = rootNode else {
+            print("Empty tree")
+            return
+        }
+        printNode(root, prefix: "", isLeft: nil)
+    }
+
+    private func printNode(_ node: AVLNode?, prefix: String, isLeft: Bool?) {
+        guard let node = node else { return }
+
+        let rightPrefix = prefix + (isLeft == true ? "│   " : "    ")
+        printNode(node.right, prefix: rightPrefix, isLeft: false)
+
+        let memberStr = String(buffer: node.member)
+        let branch = isLeft == nil ? "" : (isLeft == true ? "└── " : "┌── ")
+        print("\(prefix)\(branch)\(node.score):\(memberStr) (h:\(node.height); bf:\(node.balanceFactor()))")
+
+        let leftPrefix = prefix + (isLeft == false ? "│   " : "    ")
+        printNode(node.left, prefix: leftPrefix, isLeft: true)
     }
 }

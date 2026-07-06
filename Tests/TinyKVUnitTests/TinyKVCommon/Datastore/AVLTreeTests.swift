@@ -148,10 +148,70 @@ struct AVLTreeUnitTests {
         #expect(newLeftChild.left?.score == 5)
         #expect(newLeftChild.right?.score == 10)
     }
+
+    @Test
+    func canSearchTheTree() throws {
+        let tree = AVLTree()
+        let expectedTarget: (score: Double, member: ByteBuffer) = (55.5, self.stringBuffer("<myTargetBuffer>"))
+
+        // Insert some random data into the tree
+        for _ in 0..<20 {
+            let randomScore = Double.random(in: 1...100)
+            let randomValue = self.stringBuffer(self.randomAlphanumericString(length: Int(randomScore)))
+
+            tree.insert(score: randomScore, member: randomValue)
+        }
+        // Insert target data into the tree        
+        tree.insert(score: expectedTarget.score, member: expectedTarget.member)
+
+        // Verify that `target` can be found
+        let actualTarget = tree.lookup(score: expectedTarget.score, member: expectedTarget.member)
+        #expect(actualTarget != nil, "The element should exist in the tree")
+        #expect(actualTarget?.score == expectedTarget.score)
+        #expect(actualTarget?.member == expectedTarget.member)
+    }
+
+    @Test
+    func handlesNaNsInNodeScores() throws {
+        let tree = self.treeWithPopulatedNodes(count: 3)
+        let expectedTarget: (score: Double, member: ByteBuffer) = (-1, self.stringBuffer("<Target>"))
+
+        // Add NaNs to invalidate the comparison
+        tree.insert(score: Double.nan, member: self.stringBuffer("<NaN1>"))
+        tree.insert(score: Double.nan, member: self.stringBuffer("<NaN2>"))
+        tree.insert(score: Double.nan, member: self.stringBuffer("<NaN3>"))
+        tree.insert(score: expectedTarget.score, member: expectedTarget.member)
+
+        // Lookup should still succeed as it should fallback to the byte buffer comparison
+        let actualTarget = tree.lookup(score: expectedTarget.score, member: expectedTarget.member)
+        #expect(actualTarget != nil, "The element should exist in the tree")
+        #expect(actualTarget?.score == expectedTarget.score)
+        #expect(actualTarget?.member == expectedTarget.member)
+    }
 }
 
 extension AVLTreeUnitTests{
+    func treeWithPopulatedNodes(count amount: Int) -> AVLTree {
+        let tree = AVLTree()
+
+        // Insert some random data into the tree
+        for _ in 0..<amount {
+            let randomScore = Double.random(in: 1...Double(amount * 2))
+            let randomValue = self.stringBuffer(self.randomAlphanumericString(length: Int(randomScore)))
+
+            tree.insert(score: randomScore, member: randomValue)
+        }
+
+        return tree
+    }
+
     func stringBuffer(_ contents: String) -> ByteBuffer {
         return self.allocator.buffer(string: contents)
+    }
+
+    func randomAlphanumericString(length: Int) -> String {
+        let characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        // Create a string by mapping 'length' times, picking a random character each time
+        return String((0..<length).map { _ in characters.randomElement()! })
     }
 }
