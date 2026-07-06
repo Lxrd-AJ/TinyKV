@@ -55,11 +55,20 @@ class AVLTree {
     }
     
     func lookup(score: Double, member: ByteBuffer) -> AVLNode? {
-        guard let node = self.treeSearch(from: self.rootNode, target: (score, member)) else {
-            return nil
+        var searchNode = self.rootNode
+        while let current = searchNode {
+            let r = current.compares(toScore: score, targetMember: member)
+
+            if r < 0 { // node < target
+                searchNode = current.right
+            }else if r > 0 { // node > target
+                searchNode = current.left
+            }else{ // node == target
+                return current
+            }
         }
 
-        return node
+        return nil
     }
     
     func delete(score: Double, member: ByteBuffer) throws(TinyError) {
@@ -96,19 +105,6 @@ extension AVLTree {
         node.update()
         node = try! balance(node)
         return node
-    }
-
-    private func treeSearch(from node: AVLNode?, target: (score: Double, member: ByteBuffer)) -> AVLNode? {
-        guard let node = node else { return nil }
-        let r = node.compares(toScore: target.score, targetMember: target.member)
-
-        if r < 0 { // node < target
-            return treeSearch(from: node.right, target: target)
-        }else if r > 0 { // node > target
-            return treeSearch(from: node.left, target: target)
-        }else{ // node == target
-            return node
-        }
     }
 
     private func treeDelete(from: AVLNode, target: (score: Double, member: ByteBuffer)) throws(TinyError) -> ReplacementNode? {
