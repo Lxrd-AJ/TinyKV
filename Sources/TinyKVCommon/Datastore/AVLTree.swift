@@ -3,6 +3,7 @@ import NIOCore
 
 enum AVLTreeError: Error {
     case unexpectedMissingChildNode
+    case keyNotFound
 }
 
 final class AVLNode {
@@ -51,11 +52,14 @@ class AVLTree {
     private(set) var rootNode: AVLNode?
 
     func insert(score: Double, member: ByteBuffer) {
+        precondition(!score.isNaN, "AVLTree invariants require valid numeric scores.")
         self.rootNode = treeInsert(into: self.rootNode, target: (score, member))
     }
     
-    func lookup(score: Double, member: ByteBuffer) -> AVLNode? {
+    func lookup(score: Double, member: ByteBuffer) -> Bool {
+        precondition(!score.isNaN, "AVLTree invariants require valid numeric scores.")
         var searchNode = self.rootNode
+        // Using a loop instead of recursion uses O(1) stack space
         while let current = searchNode {
             let r = current.compares(toScore: score, targetMember: member)
 
@@ -64,16 +68,16 @@ class AVLTree {
             }else if r > 0 { // node > target
                 searchNode = current.left
             }else{ // node == target
-                return current
+                return true
             }
         }
 
-        return nil
+        return false
     }
     
-    func delete(score: Double, member: ByteBuffer) throws(TinyError) {
-        guard let rootNode = self.rootNode else { throw TinyError.keyNotFound }
-        self.rootNode = try treeDelete(from: rootNode, target: (score, member))
+    func delete(score: Double, member: ByteBuffer) throws(AVLTreeError) {
+        precondition(!score.isNaN, "AVLTree invariants require valid numeric scores.")
+        self.rootNode = try treeDelete(from: self.rootNode, target: (score, member))
     }
 }
 
@@ -107,9 +111,48 @@ extension AVLTree {
         return node
     }
 
-    private func treeDelete(from: AVLNode, target: (score: Double, member: ByteBuffer)) throws(TinyError) -> ReplacementNode? {
-        // TODO:
-        return nil
+    private func treeDelete(from: AVLNode?, target: (score: Double, member: ByteBuffer)) throws(AVLTreeError) -> ReplacementNode? {
+        guard let node = from else {
+            // We've reached the leaf of the tree and still haven't found the node
+            throw AVLTreeError.keyNotFound
+        }
+
+        let comparison = node.compares(toScore: target.score, targetMember: target.member)
+        if comparison > 0 { // the target must be in the left sub-tree
+            node.left = try treeDelete(from: node.left, target: target)
+            node.update()
+            return try! balance(node)
+        }else if comparison < 0 {
+            // `target` must be in the right subtree
+            node.right = try treeDelete(from: node.right, target: target)
+            node.update()
+            return try! balance(node)
+        }else{
+            // We've found the node `node` to be deleted
+            if node.left == nil || node.right == nil {
+                // case 1: no children at all or at most 1 child exists
+                return node.left == nil ? node.right : node.left
+            }else{
+                // case 2: `node` has 2 children and it's replacement should be it's next in order
+                // successor.
+                // Traverse down the tree to find it's successor
+                var successor = node.right!
+                while successor.left != nil {
+                    successor = successor.left!
+                }
+                // Replace `node` with it's in-order successor
+                let replacementNode = successor
+                replacementNode.left = node.left
+                replacementNode.right = try treeDelete(from: node.right, target: (successor.score, successor.member))
+                // Unlink `node` from the tree
+                node.left = nil
+                node.right = nil
+
+                // Ensure `replacementNode` is compliant before returning it
+                replacementNode.update()
+                return try balance(replacementNode)
+            }
+        }
     }
 }
 

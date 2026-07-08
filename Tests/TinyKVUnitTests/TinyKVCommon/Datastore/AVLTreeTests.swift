@@ -165,28 +165,30 @@ struct AVLTreeUnitTests {
         tree.insert(score: expectedTarget.score, member: expectedTarget.member)
 
         // Verify that `target` can be found
-        let actualTarget = tree.lookup(score: expectedTarget.score, member: expectedTarget.member)
-        #expect(actualTarget != nil, "The element should exist in the tree")
-        #expect(actualTarget?.score == expectedTarget.score)
-        #expect(actualTarget?.member == expectedTarget.member)
+        let found = tree.lookup(score: expectedTarget.score, member: expectedTarget.member)
+        #expect(found == true, "The element should exist in the tree")
     }
 
-    @Test
-    func handlesNaNsInNodeScores() throws {
-        let tree = self.treeWithPopulatedNodes(count: 3)
-        let expectedTarget: (score: Double, member: ByteBuffer) = (-1, self.stringBuffer("<Target>"))
 
-        // Add NaNs to invalidate the comparison
-        tree.insert(score: Double.nan, member: self.stringBuffer("<NaN1>"))
-        tree.insert(score: Double.nan, member: self.stringBuffer("<NaN2>"))
-        tree.insert(score: Double.nan, member: self.stringBuffer("<NaN3>"))
-        tree.insert(score: expectedTarget.score, member: expectedTarget.member)
 
-        // Lookup should still succeed as it should fallback to the byte buffer comparison
-        let actualTarget = tree.lookup(score: expectedTarget.score, member: expectedTarget.member)
-        #expect(actualTarget != nil, "The element should exist in the tree")
-        #expect(actualTarget?.score == expectedTarget.score)
-        #expect(actualTarget?.member == expectedTarget.member)
+    @Test(arguments: [
+        (101.0, buffer("A")),
+        (0.110, buffer("-1")),
+        (Double.greatestFiniteMagnitude, buffer("C")),
+        (Double.leastNonzeroMagnitude, buffer("X"))
+    ])
+    func deleteNodesInTheTree(itemToDelete: (score: Double, member: ByteBuffer)) throws {
+        let tree = self.treeWithPopulatedNodes(count: 100)
+        
+        tree.insert(score: itemToDelete.score, member: itemToDelete.member)
+
+        // Delete the items from the tree and this should not throw an error
+        try tree.delete(score: itemToDelete.score, member: itemToDelete.member)
+        // looking up the deleted items should return false
+        #expect(tree.lookup(score: itemToDelete.score, member: itemToDelete.member) == false)
+        #expect(throws: AVLTreeError.keyNotFound, "Deleting again should throw an error", performing: {
+            try tree.delete(score: itemToDelete.score, member: itemToDelete.member)
+        })
     }
 }
 
@@ -214,4 +216,8 @@ extension AVLTreeUnitTests{
         // Create a string by mapping 'length' times, picking a random character each time
         return String((0..<length).map { _ in characters.randomElement()! })
     }
+}
+
+func buffer(_ contents: String) -> ByteBuffer {
+    return ByteBufferAllocator().buffer(string: contents)
 }
