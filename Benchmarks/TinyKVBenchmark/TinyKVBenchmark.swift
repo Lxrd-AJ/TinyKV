@@ -1,7 +1,7 @@
 import Benchmark
 import NIO
 import Foundation
-import TinyKVCommon
+import TinyKVEmbedded
 
 let benchmarks: @Sendable () -> Void = {
     let payloadSize = MAX_PAYLOAD_SIZE

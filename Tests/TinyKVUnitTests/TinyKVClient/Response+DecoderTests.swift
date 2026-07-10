@@ -1,7 +1,7 @@
 import Testing
 import NIO
 @testable import TinyKVClient
-import TinyKVCommon
+import TinyKVEmbedded
 
 struct ResponseDecoderTests {
     let allocator = ByteBufferAllocator()

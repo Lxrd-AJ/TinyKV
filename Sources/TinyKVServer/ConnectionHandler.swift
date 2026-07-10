@@ -1,5 +1,5 @@
 import NIO
-import TinyKVCommon
+import TinyKVEmbedded
 
 /// Handles the lifecycle of a single client connection using modern async/await streams.
 struct ConnectionHandler: Sendable {

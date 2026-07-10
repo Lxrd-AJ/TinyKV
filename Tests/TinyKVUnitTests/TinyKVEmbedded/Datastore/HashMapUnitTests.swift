@@ -1,7 +1,7 @@
 import Testing
 import NIO
 import Foundation
-@testable import TinyKVCommon
+@testable import TinyKVEmbedded
 
 struct HashMapUnitTests {
     

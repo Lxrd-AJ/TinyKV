@@ -1,5 +1,5 @@
 import NIO
-import TinyKVCommon
+import TinyKVEmbedded
 
 public final class RequestEncoder: MessageToByteEncoder {
     public typealias OutboundIn = Request

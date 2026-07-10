@@ -1,6 +1,6 @@
 import Foundation
 import NIO
-import TinyKVCommon
+import TinyKVEmbedded
 
 public actor TinyKVEngine {
     private let store: KVStore = KVStore()

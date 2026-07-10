@@ -1,5 +1,5 @@
 import NIO
-import TinyKVCommon
+import TinyKVEmbedded
 import Foundation
 
 @main

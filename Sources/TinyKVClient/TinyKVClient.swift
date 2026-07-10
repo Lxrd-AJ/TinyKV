@@ -1,6 +1,6 @@
 import Foundation
 import NIO
-import TinyKVCommon
+import TinyKVEmbedded
 
 final class SimpleClientHandler: ChannelInboundHandler, Sendable {
     typealias InboundIn = Response

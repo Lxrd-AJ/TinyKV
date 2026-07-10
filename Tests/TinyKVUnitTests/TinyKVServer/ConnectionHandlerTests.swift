@@ -2,7 +2,7 @@ import Testing
 import NIO
 import NIOEmbedded
 @testable import TinyKVServer
-@testable import TinyKVCommon
+@testable import TinyKVEmbedded
 
 struct ConnectionHandlerTests {
     private let allocator = ByteBufferAllocator()

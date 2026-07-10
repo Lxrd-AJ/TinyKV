@@ -8,7 +8,7 @@ let package = Package(
         .iOS(.v18)
     ],
     products: [
-        .library(name: "TinyKVCommon", targets: ["TinyKVCommon"]),
+        .library(name: "TinyKVEmbedded", targets: ["TinyKVEmbedded"]),
         .executable(name: "tkvc", targets: ["TinyKVClient"]),
         .executable(name: "tkvs", targets: ["TinyKVServer"]),
     ],
@@ -18,7 +18,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "TinyKVCommon",
+            name: "TinyKVEmbedded",
             dependencies: [
                 .product(name: "NIO", package: "swift-nio")
             ]
@@ -26,14 +26,14 @@ let package = Package(
         .executableTarget(
             name: "TinyKVClient",
             dependencies: [
-                "TinyKVCommon",
+                "TinyKVEmbedded",
                 .product(name: "NIO", package: "swift-nio")
             ]
         ),
         .executableTarget(
             name: "TinyKVServer",
             dependencies: [
-                "TinyKVCommon",
+                "TinyKVEmbedded",
                 .product(name: "NIO", package: "swift-nio")
             ]
         ),
@@ -41,7 +41,7 @@ let package = Package(
             name: "TinyKVBenchmark",
             dependencies: [
                 "TinyKVServer", 
-                "TinyKVCommon", 
+                "TinyKVEmbedded", 
                 "TinyKVClient",
                 .product(name: "Benchmark", package: "package-benchmark")
             ],
@@ -52,11 +52,11 @@ let package = Package(
         ),
         .testTarget(
             name: "TinyKVUnitTests",
-            dependencies: ["TinyKVServer", "TinyKVCommon", "TinyKVClient"]
+            dependencies: ["TinyKVServer", "TinyKVEmbedded", "TinyKVClient"]
         ),
         .testTarget(
             name: "TinyKVIntegrationTests",
-            dependencies: ["TinyKVServer", "TinyKVCommon", "TinyKVClient"]
+            dependencies: ["TinyKVServer", "TinyKVEmbedded", "TinyKVClient"]
         ),
     ]
 )

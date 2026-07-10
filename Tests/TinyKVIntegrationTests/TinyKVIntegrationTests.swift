@@ -3,7 +3,7 @@ import NIO
 import Foundation
 @testable import TinyKVServer
 @testable import TinyKVClient
-@testable import TinyKVCommon
+@testable import TinyKVEmbedded
 
 struct TinyKVIntegrationTests {
     @Test 

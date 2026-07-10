@@ -1,6 +1,6 @@
 import Foundation
 import NIOCore
-@testable import TinyKVCommon
+@testable import TinyKVEmbedded
 
 struct KVPair {
     let key: String

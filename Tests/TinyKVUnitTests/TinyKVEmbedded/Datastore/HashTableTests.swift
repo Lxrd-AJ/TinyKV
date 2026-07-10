@@ -1,6 +1,6 @@
 import Testing
 import NIOCore
-@testable import TinyKVCommon
+@testable import TinyKVEmbedded
 
 struct HashTableTests {
     let allocator = ByteBufferAllocator()
