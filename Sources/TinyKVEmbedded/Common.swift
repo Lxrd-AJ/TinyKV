@@ -17,10 +17,10 @@ public enum TinyError: Error {
 
 
 public struct KVStore {
-    private let store: Datastorage
+    private let store: HashMap<ByteBuffer>
 
     public init(capacity: UInt = 1024) {
-        self.store = HashMap(capacity: capacity)
+        self.store = HashMap<ByteBuffer>(capacity: capacity)
     }
 
     public func get(key: ByteBuffer) -> ByteBuffer? {

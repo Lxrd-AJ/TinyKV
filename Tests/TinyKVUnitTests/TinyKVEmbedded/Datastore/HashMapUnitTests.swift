@@ -8,7 +8,7 @@ struct HashMapUnitTests {
     struct lookup {
         @Test
         func testLookupKeyInNewerTable() {
-            let hashMap = HashMap(capacity: 4)
+            let hashMap = HashMap<ByteBuffer>(capacity: 4)
             let key = ByteBuffer(string: "key1")
             let value = ByteBuffer(string: "value1")
             
@@ -21,7 +21,7 @@ struct HashMapUnitTests {
         
         @Test
         func testLookupKeyInOldTableDuringRehash() {
-            let hashMap = HashMap(capacity: 32)
+            let hashMap = HashMap<ByteBuffer>(capacity: 32)
             let key = ByteBuffer(string: "oldKey")
             let value = ByteBuffer(string: "oldValue")
             
@@ -36,7 +36,7 @@ struct HashMapUnitTests {
         
         @Test
         func testLookupNonExistentKey() {
-            let hashMap = HashMap(capacity: 4)
+            let hashMap = HashMap<ByteBuffer>(capacity: 4)
             let key = ByteBuffer(string: "missing")
 
             hashMap.insert(key: ByteBuffer(string: "<key1>"), value: ByteBuffer(string: "<value1>"))
@@ -220,6 +220,6 @@ struct HashMapUnitTests {
     }
 }
 
-func createSpecimen(capacity: UInt = 8) -> HashMap {
-    return HashMap(capacity: capacity)
+func createSpecimen(capacity: UInt = 8) -> HashMap<ByteBuffer> {
+    return HashMap<ByteBuffer>(capacity: capacity)
 }

@@ -7,14 +7,15 @@ import NIOCore
 /// allocation and raw pointers to minimize the overhead of Swift's ARC and to provide
 /// predictable, low-level performance.
 ///
-/// - Important: This class does not resize itself. It is intended to be managed by a
+/// ---
+/// **Important**: This class does not resize itself. It is intended to be managed by a
 ///   higher-level `HashMap` that orchestrates progressive rehashing between two instances.
-class HashTable: Datastorage {
-    /// The buckets of the hash table. Each bucket is a linked list of `HashNode`s.
+class HashTable<Value>: Datastorage {
+    /// The buckets of the hash table. Each bucket is a linked list of `HashNode<Value>`s.
     ///
-    /// We store pointers to `HashNode`s to avoid unnecessary copying when moving nodes
+    /// We store pointers to `HashNode<Value>`s to avoid unnecessary copying when moving nodes
     /// during migration or insertion. Memory is managed manually via `calloc` and `free`.
-    private(set) var buckets: UnsafeMutablePointer<UnsafeMutablePointer<HashNode>?>
+    private(set) var buckets: UnsafeMutablePointer<UnsafeMutablePointer<HashNode<Value>>?>
 
     /// The bit mask used for index calculation (capacity - 1).
     ///
@@ -36,8 +37,8 @@ class HashTable: Datastorage {
         precondition(capacity > 0 && isPowerOfTwo, "`capacity` must be a power of 2")
 
         self.indexMask = capacity - 1
-        let ptr = calloc(capacity, MemoryLayout<UnsafeMutablePointer<HashNode>?>.stride)
-        self.buckets = ptr!.bindMemory(to: UnsafeMutablePointer<HashNode>?.self, capacity: capacity)
+        let ptr = calloc(capacity, MemoryLayout<UnsafeMutablePointer<HashNode<Value>>?>.stride)
+        self.buckets = ptr!.bindMemory(to: UnsafeMutablePointer<HashNode<Value>>?.self, capacity: capacity)
         self.capacity = capacity
         self.count = 0
     }
@@ -49,7 +50,7 @@ class HashTable: Datastorage {
                 var headNode = self.buckets[idx]
                 repeat {
                     let nextNode = headNode?.pointee.next
-                    HashTable.deallocateNode(with: headNode!)
+                    HashTable<Value>.deallocateNode(with: headNode!)
                     headNode = nextNode
                 } while headNode != nil
             }
@@ -58,7 +59,7 @@ class HashTable: Datastorage {
         free(self.buckets)
     }
 
-    func insert(_ newNodePtr: UnsafeMutablePointer<HashNode>) {
+    func insert(_ newNodePtr: UnsafeMutablePointer<HashNode<Value>>) {
         let idx = newNodePtr.pointee.hashCode & self.indexMask
 
         // 1. Traverse the existing bucket to check for an update
@@ -75,7 +76,7 @@ class HashTable: Datastorage {
                 // 3. CRITICAL: We didn't use the newly allocated node because we 
                 // just updated the existing one. We must deallocate the new node 
                 // to prevent a memory leak.
-                HashTable.deallocateNode(with: newNodePtr)
+                HashTable<Value>.deallocateNode(with: newNodePtr)
 
                 // We are done updating, return early. Do not increment count.
                 return
@@ -93,18 +94,18 @@ class HashTable: Datastorage {
         self.count += 1
     }
 
-    func insert(key: ByteBuffer, value: ByteBuffer) {
+    func insert(key: ByteBuffer, value: Value) {
         self.insert(
-            HashTable.allocateNode(key: key, value: value)
+            HashTable<Value>.allocateNode(key: key, value: value)
         )
     }
 
-    func lookup(key: ByteBuffer) -> ByteBuffer? {
+    func lookup(key: ByteBuffer) -> Value? {
         guard count > 0 else {
             return nil
         }
 
-        let keyHashCode = HashTable.hash(key)
+        let keyHashCode = HashTable<Value>.hash(key)
         let idx = keyHashCode & self.indexMask
         var currentNode = self.buckets[idx]
         while let node = currentNode {
@@ -118,12 +119,12 @@ class HashTable: Datastorage {
     }
 
     func delete(key: ByteBuffer) throws(TinyError) {
-        func delete(_ node: UnsafeMutablePointer<HashNode>) {
-            HashTable.deallocateNode(with: node)
+        func delete(_ node: UnsafeMutablePointer<HashNode<Value>>) {
+            HashTable<Value>.deallocateNode(with: node)
             self.count -= 1
         }
 
-        let keyHashCode = HashTable.hash(key)
+        let keyHashCode = HashTable<Value>.hash(key)
         let idx = keyHashCode & self.indexMask
 
         guard let headNode = self.buckets[idx] else {
@@ -156,16 +157,16 @@ class HashTable: Datastorage {
 }
 
 extension HashTable {
-    static func allocateNode(key: ByteBuffer, value: ByteBuffer) -> UnsafeMutablePointer<HashNode> {
-        let hashCode = HashTable.hash(key)
-        let hashNode = HashNode(hashCode: hashCode, key: key, value: value)
-        let ptr = UnsafeMutablePointer<HashNode>.allocate(capacity: 1)
+    static func allocateNode(key: ByteBuffer, value: Value) -> UnsafeMutablePointer<HashNode<Value>> {
+        let hashCode = HashTable<Value>.hash(key)
+        let hashNode = HashNode<Value>(hashCode: hashCode, key: key, value: value)
+        let ptr = UnsafeMutablePointer<HashNode<Value>>.allocate(capacity: 1)
         ptr.initialize(to: hashNode)
 
         return ptr
     }
 
-    static func deallocateNode(with ptr: UnsafeMutablePointer<HashNode>) {
+    static func deallocateNode(with ptr: UnsafeMutablePointer<HashNode<Value>>) {
         ptr.deinitialize(count: 1)
         ptr.deallocate()
     }

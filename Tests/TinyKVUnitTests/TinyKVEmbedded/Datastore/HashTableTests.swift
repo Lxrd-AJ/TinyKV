@@ -7,24 +7,24 @@ struct HashTableTests {
 
     @Test
     func testInitialization() {
-        let hashTable = HashTable(capacity: 16)
+        let hashTable = HashTable<ByteBuffer>(capacity: 16)
         
         #expect(hashTable.count == 0)
     }
 
     @Test
     func testInsertSingleItem() {
-        let hashTable = HashTable(capacity: 16)
+        let hashTable = HashTable<ByteBuffer>(capacity: 16)
         let actualKey = "test_key"
         let actualValue = "test_value"
         let entry = KVPair(key: actualKey, value: actualValue, allocator: self.allocator)
         
-        let nodePtr = HashTable.allocateNode(key: entry.rawKey, value: entry.rawValue)
+        let nodePtr = HashTable<ByteBuffer>.allocateNode(key: entry.rawKey, value: entry.rawValue)
         hashTable.insert(nodePtr)
         
         #expect(hashTable.count == 1)
         
-        let hashCode = HashTable.hash(entry.rawKey)
+        let hashCode = HashTable<ByteBuffer>.hash(entry.rawKey)
         let index = hashCode & 15 // capacity 16 - 1
         
         let expectedNodePtr = hashTable.buckets[index]
@@ -35,7 +35,7 @@ struct HashTableTests {
 
     @Test
     func testInsertDuplicateItemUpdatesValue() {
-        let hashTable = HashTable(capacity: 16)
+        let hashTable = HashTable<ByteBuffer>(capacity: 16)
         
         let entry1 = KVPair(key: "test_key", value: "value_1", allocator: self.allocator)
         hashTable.insert(key: entry1.rawKey, value: entry1.rawValue)
@@ -48,7 +48,7 @@ struct HashTableTests {
         // Count should remain the same
         #expect(hashTable.count == 1)
         
-        let hashCode = HashTable.hash(entry2.rawKey)
+        let hashCode = HashTable<ByteBuffer>.hash(entry2.rawKey)
         let index = hashCode & 15
         let expectedNodePtr = hashTable.buckets[index]
         #expect(expectedNodePtr?.pointee.value.getString(at: 0, length: entry2.rawValue.readableBytes) == "value_2")
@@ -57,12 +57,12 @@ struct HashTableTests {
     @Test
     func testMultipleInserts() {
         let capacity = 32
-        let hashTable = HashTable(capacity: capacity)
+        let hashTable = HashTable<ByteBuffer>(capacity: capacity)
         let insertCount = 100
         
         for i in 0..<insertCount {
             let pair = KVPair(key: "key_\(i)", value: "value_\(i)", allocator: allocator)
-            let nodePtr = HashTable.allocateNode(key: pair.rawKey, value: pair.rawValue)
+            let nodePtr = HashTable<ByteBuffer>.allocateNode(key: pair.rawKey, value: pair.rawValue)
             hashTable.insert(nodePtr)
         }
         
@@ -73,7 +73,7 @@ struct HashTableTests {
         for key in testKeys {
             var keyBuffer = allocator.buffer(capacity: 16)
             keyBuffer.writeString(key)
-            let hashCode = HashTable.hash(keyBuffer)
+            let hashCode = HashTable<ByteBuffer>.hash(keyBuffer)
             let index = hashCode & (capacity - 1)
             
             var currentNode = hashTable.buckets[index]
@@ -92,12 +92,12 @@ struct HashTableTests {
     @Test
     func testCollisionChaining() {
         let capacity = 4
-        let hashTable = HashTable(capacity: capacity)
+        let hashTable = HashTable<ByteBuffer>(capacity: capacity)
         
         // Insert enough items to guarantee a collision by Pigeonhole Principle
         for i in 0..<10 {
             let pair = KVPair(key: "key_\(i)", value: "val_\(i)", allocator: allocator)
-            let nodePtr = HashTable.allocateNode(key: pair.rawKey, value: pair.rawValue)
+            let nodePtr = HashTable<ByteBuffer>.allocateNode(key: pair.rawKey, value: pair.rawValue)
             hashTable.insert(nodePtr)
         }
         
@@ -112,30 +112,30 @@ struct HashTableTests {
 
     @Test
     func freesMemoryOnDeletion() throws {
-        weak var weakHashTable: HashTable?
+        weak var weakHashTable: HashTable<ByteBuffer>?
         
         do {
             let capacity = 32
-            let hashTable = HashTable(capacity: capacity)
+            let hashTable = HashTable<ByteBuffer>(capacity: capacity)
             weakHashTable = hashTable
             
             let insertCount = 100
             
             for i in 0..<insertCount {
                 let pair = KVPair(key: "key_\(i)", value: "value_\(i)", allocator: allocator)
-                let nodePtr = HashTable.allocateNode(key: pair.rawKey, value: pair.rawValue)
+                let nodePtr = HashTable<ByteBuffer>.allocateNode(key: pair.rawKey, value: pair.rawValue)
                 hashTable.insert(nodePtr)
             }
 
             #expect(hashTable.count == insertCount)
         }
         
-        #expect(weakHashTable == nil, "HashTable leaked memory: instance was not deallocated")
+        #expect(weakHashTable == nil, "HashTable<ByteBuffer> leaked memory: instance was not deallocated")
     }
 
     @Test 
     func canLookupItems() throws {
-        let hashTable = HashTable(capacity: 32)
+        let hashTable = HashTable<ByteBuffer>(capacity: 32)
         let numItemsToAdd = 64
         self.insert(numItemsToAdd, into: hashTable)
 
@@ -157,12 +157,12 @@ struct HashTableTests {
         @Test 
         func canDeleteNodeAtLinkedListHead() throws {
             let capacity = 64
-            let specimen = HashTable(capacity: capacity)
+            let specimen = HashTable<ByteBuffer>(capacity: capacity)
             let entries = TinyKVUnitTests.insert(1, into: specimen, using: self.allocator)
             #expect(maxChainLength(for: specimen) == 1, "There should be no collisions")
 
             let entry = entries[0]
-            let expectedIdx = HashTable.hash(entry.rawKey) & (capacity - 1)
+            let expectedIdx = HashTable<ByteBuffer>.hash(entry.rawKey) & (capacity - 1)
             try specimen.delete(key: entry.rawKey)
 
             #expect(specimen.count == 0)
@@ -175,7 +175,7 @@ struct HashTableTests {
         func canDeleteNodeNestedInLinkedList() throws {
             let capacity = 8
             let numInsertions = 64
-            let specimen = HashTable(capacity: capacity)
+            let specimen = HashTable<ByteBuffer>(capacity: capacity)
             // Ensure there are collisions in this hash table
             let entries = TinyKVUnitTests.insert(numInsertions, into: specimen, using: self.allocator)
 
@@ -194,13 +194,13 @@ struct HashTableTests {
         func canDeleteNodeAtLinkedListTail() throws {
             let capacity = 8
             let numInsertions = 64
-            let specimen = HashTable(capacity: capacity)
+            let specimen = HashTable<ByteBuffer>(capacity: capacity)
             let entries = TinyKVUnitTests.insert(numInsertions, into: specimen, using: self.allocator)
 
             // Because inserts are prepended, the very first item inserted
             // will be pushed to the tail of whichever bucket it lands in.
             let targetTailEntry = entries[0]
-            let expectedIdx = HashTable.hash(targetTailEntry.rawKey) & (capacity - 1)
+            let expectedIdx = HashTable<ByteBuffer>.hash(targetTailEntry.rawKey) & (capacity - 1)
 
             // Verify that the chain actually has multiple nodes so we are truly deleting a tail
             var initialChainLength = 0
@@ -233,7 +233,7 @@ struct HashTableTests {
         @Test 
         func errorsWhenNodeNotFound() {
             let capacity = 8
-            let specimen = HashTable(capacity: capacity)
+            let specimen = HashTable<ByteBuffer>(capacity: capacity)
 
             var key = self.allocator.buffer(capacity: 8)
             key.writeString("<dummyKey>")
@@ -252,12 +252,12 @@ struct HashTableTests {
 
 extension HashTableTests {
     @discardableResult
-    private func insert(_ insertCount: Int, into hashTable: HashTable) -> [KVPair] {
+    private func insert(_ insertCount: Int, into hashTable: HashTable<ByteBuffer>) -> [KVPair] {
         return TinyKVUnitTests.insert(insertCount, into: hashTable, using: self.allocator)
     }
 }
 
-func maxChainLength(for hashTable: HashTable) -> Int {
+func maxChainLength(for hashTable: HashTable<ByteBuffer>) -> Int {
     // Verify that at least one bucket has a linked list with more than 1 node
     var maxChainLength = 0
     for i in 0..<hashTable.capacity {
@@ -273,7 +273,7 @@ func maxChainLength(for hashTable: HashTable) -> Int {
     return maxChainLength
 }
 
-func verifyAllBucketsAreNil(hashTable: HashTable) {
+func verifyAllBucketsAreNil(hashTable: HashTable<ByteBuffer>) {
     for idx in 0..<hashTable.capacity {
         #expect(hashTable.buckets[idx] == nil, "Bucket \(idx) should be empty")
     }

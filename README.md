@@ -1,6 +1,6 @@
 # TinyKV
 
-A pure Swift, Actor-isolated, embedded Key-Value store. 
+An embedded **KV and vector datastore** for local-first apps.
 
 TinyKV is a ground-up implementation of Redis in modern Swift, inspired by the "Build your own Redis in C/C++" paradigm. It bridges the gap between low-level systems architecture and high-performance Swift, serving as both a robust datastore and a learning project.
 
@@ -40,6 +40,13 @@ Modern generative AI workloads require high-performance datastores. TinyKV plans
 Future plans include:
 * **SIMD-Accelerated Vector Math & Specialized Indexing:** Implementing HNSW and utilizing Apple's `Accelerate` framework, MLX, or `simd` types for parallelized vector distance calculations (cosine similarity, dot product).
 * **Native AI Commands:** Extending the parsing engine to support commands like `FT.SEARCH` and custom commands such as `AI.SET user:1 "Text to embed"`, utilizing the local Neural Engine/GPU to generate and index vectors natively—removing massive network and processing bottlenecks for local AI agents.
+
+### Edge-to-Cloud Sync (TinyKV Cloud)
+The ultimate goal is to evolve TinyKV into a true **Local-First Architecture**. By leveraging the append-only nature of the LSM-tree Write-Ahead Log (WAL), TinyKV will act as a smart edge database that syncs seamlessly to a centralized cloud.
+* **WAL Streaming:** A background Swift Actor will stream local, unacknowledged WAL entries to the cloud via WebSockets/gRPC, and pull down changes from other devices.
+* **Conflict Resolution:** Implementing Last-Write-Wins (LWW) and Conflict-Free Replicated Data Types (CRDTs) directly in the engine to seamlessly merge offline edits (e.g., merging Sorted Sets from two offline devices).
+* **AI Command Sync Optimization:** Instead of syncing massive float vectors over the network, TinyKV will sync the raw `AI.SET` text commands via the WAL. The TinyKV Cloud will regenerate the identical vector on its own hardware, saving massive bandwidth.
+* **Cold Storage / SSTable Offloading:** Locally dropping older SSTables to free up disk space, and fetching missing data on-the-fly from Cloud SSTables when queried.
 
 # Future Extensions
 * Investigate Hopscotch algorithm for collision resolution, see https://github.com/Tessil/hopscotch-map 

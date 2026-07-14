@@ -20,7 +20,7 @@ struct KVPair {
 }
 
 @discardableResult
-func insert(_ insertCount: Int, into hashTable: Datastorage, using allocator: ByteBufferAllocator = ByteBufferAllocator()) -> [KVPair] {
+func insert<Storage: Datastorage>(_ insertCount: Int, into hashTable: Storage, using allocator: ByteBufferAllocator = ByteBufferAllocator()) -> [KVPair] where Storage.Value == ByteBuffer {
     var entries: [KVPair] = []
     for i in 0..<insertCount {
         let pair = KVPair(key: "key_\(i)", value: "value_\(i)", allocator: allocator)

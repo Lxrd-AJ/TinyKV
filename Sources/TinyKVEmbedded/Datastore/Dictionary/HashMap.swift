@@ -9,14 +9,14 @@ import NIO
 ///
 /// This ensures that the server maintains predictable latency even as the dataset grows
 /// and triggers a resize.
-class HashMap: Datastorage {
+class HashMap<Value>: Datastorage {
     /// The older hash table that is being migrated from during a rehash.
     /// This is `nil` when no rehashing is in progress.
-    private(set) var oldHashTable: HashTable? 
+    private(set) var oldHashTable: HashTable<Value>? 
     
     /// The newer, larger hash table that is being migrated to.
     /// If no rehashing is in progress, this is the primary and only table.
-    private(set) var newerHashTable: HashTable
+    private(set) var newerHashTable: HashTable<Value>
     
     /// The current index in the `oldHashTable` that is being migrated.
     /// This keeps track of progress so the next operation knows where to resume.
@@ -25,10 +25,10 @@ class HashMap: Datastorage {
     /// Initializes a new HashMap with a starting capacity.
     /// - Parameter capacity: The initial number of buckets. Must be a power of 2.
     init(capacity: UInt) {
-        self.newerHashTable = HashTable(capacity: Int(capacity))
+        self.newerHashTable = HashTable<Value>(capacity: Int(capacity))
     }
 
-    func insert(key: ByteBuffer, value: ByteBuffer) {
+    func insert(key: ByteBuffer, value: Value) {
         // Insertion always goes to the newer hash table
         self.newerHashTable.insert(key: key, value: value)
 
@@ -46,7 +46,7 @@ class HashMap: Datastorage {
         self.progressivelyRehash()
     }
     
-    func lookup(key: ByteBuffer) -> ByteBuffer? {
+    func lookup(key: ByteBuffer) -> Value? {
         self.progressivelyRehash()
 
         // Search both hash tables for the given `key`
@@ -92,7 +92,7 @@ extension HashMap {
         // Migrate the contents of the current hashtable `self.newerHashTable` to the older one
         // and create a new double-sized `self.newerHashTable`
         self.oldHashTable = self.newerHashTable
-        self.newerHashTable = HashTable(capacity: self.oldHashTable!.capacity * 2)
+        self.newerHashTable = HashTable<Value>(capacity: self.oldHashTable!.capacity * 2)
         self.migrationIdx = 0
     }
 

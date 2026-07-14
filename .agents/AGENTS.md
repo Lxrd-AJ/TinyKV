@@ -43,7 +43,7 @@ As the user progresses through the implementation, they will encounter key archi
 
 ### 6. Persistent Storage Engine (Future Work)
 * **Pattern:** Log-Structured Merge-tree (LSM-tree) & Cooperative Actor System.
-* **Why:** To extend TinyKV from an in-memory cache to a persistent, on-disk storage engine comparable to RocksDB/LevelDB/LanceDB. This involves moving beyond single-actor in-memory hash tables to handle datasets larger than RAM with crash-resistant durability.
+* **Why:** To extend TinyKV from an in-memory cache to a persistent, on-disk storage engine comparable to RocksDB/LevelDB/LanceDB/[Valkey](https://valkey.io/topics/data-types/). This involves moving beyond single-actor in-memory hash tables to handle datasets larger than RAM with crash-resistant durability.
 * **Key Concepts:** Write-Ahead Logging (WAL) with SwiftNIO's `NonBlockingFileIO`, MemTables (Swift-based SkipList), immutable SSTables on disk, and background Actors for compaction and flushing. Also includes Bloom Filters and an LRU Block Cache to optimize read paths.
 * The user can choose to have either in-memory only or disk based persistence
 
