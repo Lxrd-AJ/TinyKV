@@ -2,6 +2,8 @@ import Foundation
 import NIOCore
 @testable import TinyKVEmbedded
 
+let allocator = ByteBufferAllocator()
+
 struct KVPair {
     let key: String
     let value: String
@@ -28,4 +30,14 @@ func insert<Storage: Datastorage>(_ insertCount: Int, into hashTable: Storage, u
         entries.append(pair)
     }
     return entries
+}
+
+func buffer(_ contents: String) -> ByteBuffer {
+    return allocator.buffer(string: contents)
+}
+
+func randomAlphanumericString(length: Int) -> String {
+    let characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    // Create a string by mapping 'length' times, picking a random character each time
+    return String((0..<length).map { _ in characters.randomElement()! })
 }

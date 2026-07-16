@@ -157,7 +157,7 @@ struct AVLTreeUnitTests {
         // Insert some random data into the tree
         for _ in 0..<20 {
             let randomScore = Double.random(in: 1...100)
-            let randomValue = self.stringBuffer(self.randomAlphanumericString(length: Int(randomScore)))
+            let randomValue = self.stringBuffer(randomAlphanumericString(length: Int(randomScore)))
 
             tree.insert(score: randomScore, member: randomValue)
         }
@@ -182,13 +182,15 @@ struct AVLTreeUnitTests {
         
         tree.insert(score: itemToDelete.score, member: itemToDelete.member)
 
-        // Delete the items from the tree and this should not throw an error
-        try tree.delete(score: itemToDelete.score, member: itemToDelete.member)
+        // Delete the items from the tree and this should return true
+        let success = tree.delete(score: itemToDelete.score, member: itemToDelete.member)
+        #expect(success, "Deleting should return true on success")
+        
         // looking up the deleted items should return false
         #expect(tree.lookup(score: itemToDelete.score, member: itemToDelete.member) == false)
-        #expect(throws: AVLTreeError.keyNotFound, "Deleting again should throw an error", performing: {
-            try tree.delete(score: itemToDelete.score, member: itemToDelete.member)
-        })
+        
+        let secondDelete = tree.delete(score: itemToDelete.score, member: itemToDelete.member)
+        #expect(secondDelete == false, "Deleting again should return false")
     }
 }
 
@@ -199,7 +201,7 @@ extension AVLTreeUnitTests{
         // Insert some random data into the tree
         for _ in 0..<amount {
             let randomScore = Double.random(in: 1...Double(amount * 2))
-            let randomValue = self.stringBuffer(self.randomAlphanumericString(length: Int(randomScore)))
+            let randomValue = self.stringBuffer(randomAlphanumericString(length: Int(randomScore)))
 
             tree.insert(score: randomScore, member: randomValue)
         }
@@ -210,14 +212,4 @@ extension AVLTreeUnitTests{
     func stringBuffer(_ contents: String) -> ByteBuffer {
         return self.allocator.buffer(string: contents)
     }
-
-    func randomAlphanumericString(length: Int) -> String {
-        let characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        // Create a string by mapping 'length' times, picking a random character each time
-        return String((0..<length).map { _ in characters.randomElement()! })
-    }
-}
-
-func buffer(_ contents: String) -> ByteBuffer {
-    return ByteBufferAllocator().buffer(string: contents)
 }

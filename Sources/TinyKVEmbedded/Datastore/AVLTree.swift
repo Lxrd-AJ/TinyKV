@@ -75,9 +75,15 @@ class AVLTree {
         return false
     }
     
-    func delete(score: Double, member: ByteBuffer) throws(AVLTreeError) {
+    @discardableResult
+    func delete(score: Double, member: ByteBuffer) -> Bool {
         precondition(!score.isNaN, "AVLTree invariants require valid numeric scores.")
-        self.rootNode = try treeDelete(from: self.rootNode, target: (score, member))
+        do {
+            self.rootNode = try treeDelete(from: self.rootNode, target: (score, member))
+            return true
+        } catch {
+            return false
+        }
     }
 }
 
@@ -140,17 +146,21 @@ extension AVLTree {
                 while successor.left != nil {
                     successor = successor.left!
                 }
-                // Replace `node` with it's in-order successor
-                let replacementNode = successor
-                replacementNode.left = node.left
-                replacementNode.right = try treeDelete(from: node.right, target: (successor.score, successor.member))
+                
+                // Safely delete the successor from the right subtree FIRST!
+                let newRight = try treeDelete(from: node.right, target: (successor.score, successor.member))
+                
+                // Now that it's detached, it's safe to rewire its pointers
+                successor.left = node.left
+                successor.right = newRight
+                
                 // Unlink `node` from the tree
                 node.left = nil
                 node.right = nil
 
-                // Ensure `replacementNode` is compliant before returning it
-                replacementNode.update()
-                return try balance(replacementNode)
+                // Ensure `successor` is compliant before returning it
+                successor.update()
+                return try balance(successor)
             }
         }
     }
