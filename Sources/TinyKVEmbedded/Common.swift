@@ -15,6 +15,7 @@ public enum TinyError: Error {
     case keyNotFound
 }
 
+typealias KVPair = (member: ByteBuffer, score: Double)
 
 public struct KVStore {
     private let store: HashMap<ByteBuffer>

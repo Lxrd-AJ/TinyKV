@@ -58,21 +58,11 @@ class AVLTree {
     
     func lookup(score: Double, member: ByteBuffer) -> Bool {
         precondition(!score.isNaN, "AVLTree invariants require valid numeric scores.")
-        var searchNode = self.rootNode
-        // Using a loop instead of recursion uses O(1) stack space
-        while let current = searchNode {
-            let r = current.compares(toScore: score, targetMember: member)
-
-            if r < 0 { // node < target
-                searchNode = current.right
-            }else if r > 0 { // node > target
-                searchNode = current.left
-            }else{ // node == target
-                return true
-            }
+        guard let _ = treeSearch(from: self.rootNode, for: score, and: member) else {
+            return false
         }
 
-        return false
+        return true
     }
     
     @discardableResult
@@ -87,8 +77,39 @@ class AVLTree {
     }
 }
 
+// Support range queries on the tree
+extension AVLTree {
+    // For ZQUERY key score name offset limit
+    func query(startingAt score: Double, member: ByteBuffer, offset: Int, limit: UInt = 100) -> [KVPair]{
+        // 1. Traverse the AVL tree to find the first node where  node.score >= score  and  node.member >= member .
+        // 2. Traverse forward (using the node's  next  or tree traversal) by  offset  steps.
+        // 3. Collect up to  limit  elements into your  [KVPair]  array.
+        // 4. Return the array.
+        // TODO:
+        return []
+    }
+}
+
 extension AVLTree {
     typealias ReplacementNode = AVLNode
+
+    private func treeSearch(from node: AVLNode?, for score: Double, and member: ByteBuffer) -> AVLNode?{
+        var searchNode = node
+        // Using a loop instead of recursion uses O(1) stack space
+        while let current = searchNode {
+            let r = current.compares(toScore: score, targetMember: member)
+
+            if r < 0 { // node < target
+                searchNode = current.right
+            }else if r > 0 { // node > target
+                searchNode = current.left
+            }else{ // node == target
+                return current
+            }
+        }
+
+        return nil
+    }
 
     /// Recursive tree insertion
     private func treeInsert(into node: AVLNode?, target: (score: Double, member: ByteBuffer)) -> AVLNode {

@@ -52,15 +52,20 @@ public final class SortedSet {
     }
 
     // For ZRANGE / ZREVRANGE
-    func range(from startRank: Int, to endRank: Int) -> [(member: ByteBuffer, score: Double)] {
+    func range(from startRank: Int, to endRank: Int) -> [KVPair] {
         // TODO:
         return []
     }
 
     // For ZRANGEBYSCORE
-    func range(from startScore: Double, to endScore: Double) -> [(member: ByteBuffer, score: Double)] {
+    func range(from startScore: Double, to endScore: Double) -> [KVPair] {
         // TODO: 
         return []
+    }
+
+    // For ZQUERY key score name offset limit
+    func query(startingAt score: Double, member: ByteBuffer, offset: Int, limit: UInt = 100) -> [KVPair]{
+        return self.tree.query(startingAt: score, member: member, offset: offset, limit: limit)
     }
 }
 
