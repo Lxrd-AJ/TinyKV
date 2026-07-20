@@ -81,7 +81,10 @@ class AVLTree {
 extension AVLTree {
     // For ZQUERY key score name offset limit
     func query(startingAt score: Double, member: ByteBuffer, offset: Int, limit: UInt = 100) -> [KVPair]{
-        // 1. Traverse the AVL tree to find the first node where  node.score >= score  and  node.member >= member .
+        guard let startingNode = treeSearchGreater(than: (score, member), starting: self.rootNode) else {
+            return []
+        }
+        
         // 2. Traverse forward (using the node's  next  or tree traversal) by  offset  steps.
         // 3. Collect up to  limit  elements into your  [KVPair]  array.
         // 4. Return the array.
@@ -92,24 +95,6 @@ extension AVLTree {
 
 extension AVLTree {
     typealias ReplacementNode = AVLNode
-
-    private func treeSearch(from node: AVLNode?, for score: Double, and member: ByteBuffer) -> AVLNode?{
-        var searchNode = node
-        // Using a loop instead of recursion uses O(1) stack space
-        while let current = searchNode {
-            let r = current.compares(toScore: score, targetMember: member)
-
-            if r < 0 { // node < target
-                searchNode = current.right
-            }else if r > 0 { // node > target
-                searchNode = current.left
-            }else{ // node == target
-                return current
-            }
-        }
-
-        return nil
-    }
 
     /// Recursive tree insertion
     private func treeInsert(into node: AVLNode?, target: (score: Double, member: ByteBuffer)) -> AVLNode {
@@ -294,5 +279,57 @@ extension AVLTree {
 
         let leftPrefix = prefix + (isLeft == false ? "│   " : "    ")
         printNode(node.left, prefix: leftPrefix, isLeft: true)
+    }
+}
+
+
+// MARK: - Tree/Search
+
+fileprivate func treeSearch(from node: AVLNode?, for score: Double, and member: ByteBuffer) -> AVLNode?{
+    var searchNode = node
+    // Using a loop instead of recursion uses O(1) stack space
+    while let current = searchNode {
+        let r = current.compares(toScore: score, targetMember: member)
+
+        if r < 0 { // node < target
+            searchNode = current.right
+        }else if r > 0 { // node > target
+            searchNode = current.left
+        }else{ // node == target
+            return current
+        }
+    }
+
+    return nil
+}
+
+fileprivate func treeSearchGreater(than target: (score: Double, member: ByteBuffer), starting from: AVLNode?) -> AVLNode? {
+    // Traverse the AVL tree to find the first node where  node.score >= score  and  node.member >= member .
+    var searchNode = from
+    
+    while let current = searchNode {
+        let cmp = current.compares(toScore: target.score, targetMember: target.member)
+
+        if cmp < 0 { // `current` is less than `target`
+            searchNode = current.right
+        }else{ // `current` is either equal to or greater than `target`
+            return current
+        }
+    }
+
+    return nil
+}
+
+// TODO: Ordered Statistics Tree and AVLTreeIterator
+struct AVLTreeIterator: IteratorProtocol {
+    let startingNode: AVLNode
+
+    init(_ node: AVLNode){
+        self.startingNode = node
+    }
+
+    mutating func next() -> AVLNode? {
+        // TODO:
+        return nil
     }
 }
