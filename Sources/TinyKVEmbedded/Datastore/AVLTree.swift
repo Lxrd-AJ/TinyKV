@@ -11,6 +11,8 @@ final class AVLNode {
     var right: AVLNode?
     // represent a leaf node with a default height of 1 and **not** 0
     private(set) var height: UInt8 = 1
+    // The number of nodes in the tree - This helps support ordered statistics tree operations
+    private(set) var size: UInt = 1
 
     let score: Double
     let member: ByteBuffer
@@ -23,6 +25,7 @@ final class AVLNode {
     /// Tree updates are bottom-up, so a height change propagates from children to parents.
     func update() {
         self.height = 1 + max(self.left?.height ?? 0, self.right?.height ?? 0)
+        self.size = (self.left?.size ?? 0) + (self.right?.size ?? 0) + 1
     }
 
     func balanceFactor() -> Int {
@@ -259,7 +262,7 @@ extension AVLTree {
 
 // MARK: - Pretty Print
 extension AVLTree {
-    public func prettyPrint() {
+    func prettyPrint() {
         guard let root = rootNode else {
             print("Empty tree")
             return
@@ -275,7 +278,7 @@ extension AVLTree {
 
         let memberStr = String(buffer: node.member)
         let branch = isLeft == nil ? "" : (isLeft == true ? "└── " : "┌── ")
-        print("\(prefix)\(branch)\(node.score):\(memberStr) (h:\(node.height); bf:\(node.balanceFactor()))")
+        print("\(prefix)\(branch)\(node.score):\(memberStr) (h:\(node.height); bf:\(node.balanceFactor()); s:\(node.size))")
 
         let leftPrefix = prefix + (isLeft == false ? "│   " : "    ")
         printNode(node.left, prefix: leftPrefix, isLeft: true)

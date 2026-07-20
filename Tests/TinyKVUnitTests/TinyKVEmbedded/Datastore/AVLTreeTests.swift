@@ -23,11 +23,11 @@ struct AVLTreeUnitTests {
         Q.update(); T.update(); C.update(); A.update(); B.update();
 
         // Verify the balance factors and heights
-        #expect(Q.balanceFactor() == 0 && Q.height == 1)
-        #expect(T.height == 1 && T.balanceFactor() == 0)
-        #expect(A.height == 1 && A.balanceFactor() == 0)
-        #expect(C.height == 2 && C.balanceFactor() == 0)
-        #expect(B.height == 3 && B.balanceFactor() == -1)
+        #expect(Q.balanceFactor() == 0 && Q.height == 1 && Q.size == 1)
+        #expect(T.height == 1 && T.balanceFactor() == 0 && T.size == 1)
+        #expect(A.height == 1 && A.balanceFactor() == 0 && A.size == 1)
+        #expect(C.height == 2 && C.balanceFactor() == 0 && C.size == 3)
+        #expect(B.height == 3 && B.balanceFactor() == -1 && B.size == 5)
     }
 
     @Test func testRotateLeft() throws {
@@ -51,6 +51,8 @@ struct AVLTreeUnitTests {
         
         #expect(A.height == 2)
         #expect(B.height == 3)
+        #expect(A.size == 2)
+        #expect(B.size == 3)
     }
 
     @Test func testRotateRight() throws {
@@ -74,6 +76,8 @@ struct AVLTreeUnitTests {
         
         #expect(A.height == 2)
         #expect(B.height == 3)
+        #expect(A.size == 2)
+        #expect(B.size == 3)
     }
 
     @Test func testBalanceLeftHeavyStraightLine() throws {
@@ -94,6 +98,9 @@ struct AVLTreeUnitTests {
         #expect(newRoot === B)
         #expect(B.right === A)
         #expect(B.left === C)
+        #expect(B.size == 3)
+        #expect(A.size == 1)
+        #expect(C.size == 1)
     }
 
     @Test func testBalanceLeftHeavyZigzag() throws {
@@ -114,6 +121,9 @@ struct AVLTreeUnitTests {
         #expect(newRoot === C)
         #expect(C.left === B)
         #expect(C.right === A)
+        #expect(C.size == 3)
+        #expect(B.size == 1)
+        #expect(A.size == 1)
     }
 
     @Test func testTreeInsert() throws {
@@ -133,8 +143,11 @@ struct AVLTreeUnitTests {
         
         // Heights should be perfectly balanced
         #expect(root.height == 2)
+        #expect(root.size == 3)
         #expect(root.left?.height == 1)
+        #expect(root.left?.size == 1)
         #expect(root.right?.height == 1)
+        #expect(root.right?.size == 1)
         
         // Insert nodes that cause a Left-Right zigzag on the left subtree
         tree.insert(score: 5, member: self.stringBuffer("D"))
@@ -145,8 +158,13 @@ struct AVLTreeUnitTests {
         // 7 should become the new left child of the root
         let newLeftChild = try #require(root.left)
         #expect(newLeftChild.score == 7)
+        #expect(newLeftChild.size == 3)
         #expect(newLeftChild.left?.score == 5)
+        #expect(newLeftChild.left?.size == 1)
         #expect(newLeftChild.right?.score == 10)
+        #expect(newLeftChild.right?.size == 1)
+        
+        #expect(root.size == 5)
     }
 
     @Test
