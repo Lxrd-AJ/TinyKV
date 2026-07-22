@@ -7,11 +7,11 @@ struct AVLTreeUnitTests {
 
     @Test func canUpdateNodes() throws {
         // Create some nodes
-        let A = AVLNode(score: 10, member: self.stringBuffer("A"))
-        let B = AVLNode(score: 12, member: self.stringBuffer("B"))
-        let C = AVLNode(score: 30, member: self.stringBuffer("C"))
-        let T = AVLNode(score: 15, member: self.stringBuffer("T"))
-        let Q = AVLNode(score: 35, member: self.stringBuffer("Q"))
+        let A = AVLNode(score: 10, member: buffer("A"))
+        let B = AVLNode(score: 12, member: buffer("B"))
+        let C = AVLNode(score: 30, member: buffer("C"))
+        let T = AVLNode(score: 15, member: buffer("T"))
+        let Q = AVLNode(score: 35, member: buffer("Q"))
 
         // Build a structure
         B.left = A
@@ -32,9 +32,9 @@ struct AVLTreeUnitTests {
 
     @Test func testRotateLeft() throws {
         let tree = AVLTree()
-        let A = AVLNode(score: 10, member: self.stringBuffer("A"))
-        let B = AVLNode(score: 20, member: self.stringBuffer("B"))
-        let innerNode = AVLNode(score: 15, member: self.stringBuffer("inner"))
+        let A = AVLNode(score: 10, member: buffer("A"))
+        let B = AVLNode(score: 20, member: buffer("B"))
+        let innerNode = AVLNode(score: 15, member: buffer("inner"))
 
         A.right = B
         B.left = innerNode
@@ -57,9 +57,9 @@ struct AVLTreeUnitTests {
 
     @Test func testRotateRight() throws {
         let tree = AVLTree()
-        let A = AVLNode(score: 20, member: self.stringBuffer("A"))
-        let B = AVLNode(score: 10, member: self.stringBuffer("B"))
-        let innerNode = AVLNode(score: 15, member: self.stringBuffer("inner"))
+        let A = AVLNode(score: 20, member: buffer("A"))
+        let B = AVLNode(score: 10, member: buffer("B"))
+        let innerNode = AVLNode(score: 15, member: buffer("inner"))
 
         A.left = B
         B.right = innerNode
@@ -82,9 +82,9 @@ struct AVLTreeUnitTests {
 
     @Test func testBalanceLeftHeavyStraightLine() throws {
         let tree = AVLTree()
-        let A = AVLNode(score: 30, member: self.stringBuffer("A"))
-        let B = AVLNode(score: 20, member: self.stringBuffer("B"))
-        let C = AVLNode(score: 10, member: self.stringBuffer("C"))
+        let A = AVLNode(score: 30, member: buffer("A"))
+        let B = AVLNode(score: 20, member: buffer("B"))
+        let C = AVLNode(score: 10, member: buffer("C"))
 
         A.left = B
         B.left = C
@@ -105,9 +105,9 @@ struct AVLTreeUnitTests {
 
     @Test func testBalanceLeftHeavyZigzag() throws {
         let tree = AVLTree()
-        let A = AVLNode(score: 30, member: self.stringBuffer("A"))
-        let B = AVLNode(score: 10, member: self.stringBuffer("B"))
-        let C = AVLNode(score: 20, member: self.stringBuffer("C"))
+        let A = AVLNode(score: 30, member: buffer("A"))
+        let B = AVLNode(score: 10, member: buffer("B"))
+        let C = AVLNode(score: 20, member: buffer("C"))
 
         A.left = B
         B.right = C
@@ -130,9 +130,9 @@ struct AVLTreeUnitTests {
         let tree = AVLTree()
         
         // Insert nodes that will cause a right-heavy straight line (Right-Right)
-        tree.insert(score: 10, member: self.stringBuffer("A"))
-        tree.insert(score: 20, member: self.stringBuffer("B"))
-        tree.insert(score: 30, member: self.stringBuffer("C"))
+        tree.insert(score: 10, member: buffer("A"))
+        tree.insert(score: 20, member: buffer("B"))
+        tree.insert(score: 30, member: buffer("C"))
         
         // The tree should have balanced itself with a Left Rotation
         // B should be root, A on left, C on right
@@ -150,8 +150,8 @@ struct AVLTreeUnitTests {
         #expect(root.right?.size == 1)
         
         // Insert nodes that cause a Left-Right zigzag on the left subtree
-        tree.insert(score: 5, member: self.stringBuffer("D"))
-        tree.insert(score: 7, member: self.stringBuffer("E"))
+        tree.insert(score: 5, member: buffer("D"))
+        tree.insert(score: 7, member: buffer("E"))
         
         // The subtree at Node A (score 10) should have automatically balanced 
         // using a double rotation (rotate left on 5, rotate right on 10)
@@ -170,12 +170,12 @@ struct AVLTreeUnitTests {
     @Test
     func canSearchTheTree() throws {
         let tree = AVLTree()
-        let expectedTarget: (score: Double, member: ByteBuffer) = (55.5, self.stringBuffer("<myTargetBuffer>"))
+        let expectedTarget: (score: Double, member: ByteBuffer) = (55.5, buffer("<myTargetBuffer>"))
 
         // Insert some random data into the tree
         for _ in 0..<20 {
             let randomScore = Double.random(in: 1...100)
-            let randomValue = self.stringBuffer(randomAlphanumericString(length: Int(randomScore)))
+            let randomValue = buffer(randomAlphanumericString(length: Int(randomScore)))
 
             tree.insert(score: randomScore, member: randomValue)
         }
@@ -196,7 +196,7 @@ struct AVLTreeUnitTests {
         (Double.leastNonzeroMagnitude, buffer("X"))
     ])
     func deleteNodesInTheTree(itemToDelete: (score: Double, member: ByteBuffer)) throws {
-        let tree = self.treeWithPopulatedNodes(count: 100)
+        let tree = treeWithRandomNodes(count: 100)
         
         tree.insert(score: itemToDelete.score, member: itemToDelete.member)
 
@@ -212,22 +212,56 @@ struct AVLTreeUnitTests {
     }
 }
 
-extension AVLTreeUnitTests{
-    func treeWithPopulatedNodes(count amount: Int) -> AVLTree {
+struct AVLTreeIteratorUnitTests {
+    @Test
+    func canIterateTreeInOrder() {
         let tree = AVLTree()
-
-        // Insert some random data into the tree
-        for _ in 0..<amount {
-            let randomScore = Double.random(in: 1...Double(amount * 2))
-            let randomValue = self.stringBuffer(randomAlphanumericString(length: Int(randomScore)))
-
-            tree.insert(score: randomScore, member: randomValue)
+        let expectedItems = (0..<15).map({ Double($0) })
+        for i in expectedItems {
+            tree.insert(score: Double(i), member: buffer(randomAlphanumericString(length: 5)))
+        }
+        var specimen = tree.iterator()
+        
+        var returnedItems: [Double] = []
+        while let item = specimen.next() {
+            returnedItems.append(item.score)
         }
 
-        return tree
+        #expect(expectedItems == returnedItems)
     }
 
-    func stringBuffer(_ contents: String) -> ByteBuffer {
-        return self.allocator.buffer(string: contents)
+    @Test
+    func canIterateTreeWithRandomInsertionOrder() {
+        let tree = treeWithRandomNodes(count: 20)
+        var specimen = tree.iterator()
+
+        var returnedItems: [Double] = []
+        while let node = specimen.next() {
+            returnedItems.append(node.score)
+        }
+
+        #expect(returnedItems == returnedItems.sorted())
+    }
+
+    @Test
+    func canIterateTreeFromAPosition() {
+        let tree = AVLTree()
+        let itemsToInsert = (0..<20)
+            .map({ Double($0) })
+            .map({ return ($0, buffer(randomAlphanumericString(length: 5))) })
+        for i in itemsToInsert {
+            tree.insert(score: i.0, member: i.1)
+        }
+        let halfwayIdx = itemsToInsert.count / 2
+        let middleEntry = itemsToInsert[halfwayIdx]
+        var specimen = tree.iterator(from: middleEntry)
+        
+        var returnedItems: [Double] = []
+        while let item = specimen.next() {
+            returnedItems.append(item.score)
+        }
+
+        let expectedItems = itemsToInsert[halfwayIdx...].map({ return $0.0 })
+        #expect(expectedItems == returnedItems)
     }
 }

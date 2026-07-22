@@ -41,3 +41,17 @@ func randomAlphanumericString(length: Int) -> String {
     // Create a string by mapping 'length' times, picking a random character each time
     return String((0..<length).map { _ in characters.randomElement()! })
 }
+
+func treeWithRandomNodes(count amount: Int) -> AVLTree {
+    let tree = AVLTree()
+
+    // Insert some random data into the tree
+    for _ in 0..<amount {
+        let randomScore = Double.random(in: 1...Double(amount * 2))
+        let randomValue = buffer(randomAlphanumericString(length: Int(randomScore)))
+
+        tree.insert(score: randomScore, member: randomValue)
+    }
+
+    return tree
+}

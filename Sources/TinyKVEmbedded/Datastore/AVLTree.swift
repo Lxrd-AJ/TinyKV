@@ -78,15 +78,18 @@ class AVLTree {
             return false
         }
     }
+
+    func iterator(from target: (score: Double, member: ByteBuffer)? = nil) -> AVLTreeIterator {
+        return AVLTreeIterator(self.rootNode, startingFrom: target)
+    }
 }
 
 // Support range queries on the tree
 extension AVLTree {
     // For ZQUERY key score name offset limit
     func query(startingAt score: Double, member: ByteBuffer, offset: Int, limit: UInt = 100) -> [KVPair]{
-        guard let startingNode = treeSearchGreater(than: (score, member), starting: self.rootNode) else {
-            return []
-        }
+        guard let rootNode = self.rootNode else { return [] }
+        let iterator = AVLTreeIterator(rootNode, startingFrom: (score, member))
         
         // 2. Traverse forward (using the node's  next  or tree traversal) by  offset  steps.
         // 3. Collect up to  limit  elements into your  [KVPair]  array.
@@ -306,33 +309,53 @@ fileprivate func treeSearch(from node: AVLNode?, for score: Double, and member: 
     return nil
 }
 
-fileprivate func treeSearchGreater(than target: (score: Double, member: ByteBuffer), starting from: AVLNode?) -> AVLNode? {
-    // Traverse the AVL tree to find the first node where  node.score >= score  and  node.member >= member .
-    var searchNode = from
-    
-    while let current = searchNode {
-        let cmp = current.compares(toScore: target.score, targetMember: target.member)
+// MARK: - Tree/Iterator
 
-        if cmp < 0 { // `current` is less than `target`
-            searchNode = current.right
-        }else{ // `current` is either equal to or greater than `target`
-            return current
+struct AVLTreeIterator: IteratorProtocol {
+    private var stack: [AVLNode] = []
+
+    init(_ rootNode: AVLNode?, startingFrom target: (score: Double, member: ByteBuffer)? = nil){
+        guard let target = target else {
+            // No `target` specified, so we need to iterate from the smallest node
+            // Build a stack from the `rootNode` to the smallest node
+            var leftTarget: AVLNode? = rootNode
+            while leftTarget != nil {
+                self.stack.append(leftTarget!)
+                leftTarget = leftTarget?.left
+            }
+            return
+        }
+
+        // Keep track of the relevant nodes from `rootNode` to the target node that meets `target`
+        var searchNode: AVLNode? = rootNode
+        while let current = searchNode {
+            let cmp = current.compares(toScore: target.score, targetMember: target.member)
+            if cmp < 0 { // `current` is less than `target`
+                searchNode = current.right
+            }else{
+                // A candidate node that is >= target has been found.
+                self.stack.append(current)
+                // Continue searching as there could be an even smaller node than `current` that
+                // is still >= `target`
+                searchNode = current.left
+            }
         }
     }
 
-    return nil
-}
-
-// TODO: Ordered Statistics Tree and AVLTreeIterator
-struct AVLTreeIterator: IteratorProtocol {
-    let startingNode: AVLNode
-
-    init(_ node: AVLNode){
-        self.startingNode = node
-    }
-
     mutating func next() -> AVLNode? {
-        // TODO:
-        return nil
+        guard let nextElement = self.stack.popLast() else {
+            return nil
+        }
+
+        if nextElement.right != nil {
+            // Traverse the entire left-spine of `nextElement` and add them to the stack
+            var nodeToAdd = nextElement.right
+            while let futureElement = nodeToAdd {
+                self.stack.append(futureElement)
+                nodeToAdd = nodeToAdd?.left
+            }
+        }
+
+        return nextElement
     }
 }
