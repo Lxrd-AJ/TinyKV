@@ -7,6 +7,8 @@ enum InsertResult {
 }
 
 public final class SortedSet {
+    // TODO: This class should delegate to `AVLTree` and `HashMap`. I need to use protocols in this class
+    // so that for unit tests, I can mock out the tree & hashmap
     internal let tree: AVLTree = AVLTree()
     internal let hashmap: HashMap<Double> = HashMap<Double>(capacity: 2)
 

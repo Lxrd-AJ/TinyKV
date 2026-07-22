@@ -89,13 +89,17 @@ extension AVLTree {
     // For ZQUERY key score name offset limit
     func query(startingAt score: Double, member: ByteBuffer, offset: Int, limit: UInt = 100) -> [KVPair]{
         guard let rootNode = self.rootNode else { return [] }
-        let iterator = AVLTreeIterator(rootNode, startingFrom: (score, member))
+        var iterator = AVLTreeIterator(rootNode, startingFrom: (score, member))
         
-        // 2. Traverse forward (using the node's  next  or tree traversal) by  offset  steps.
+        // TODO: Continue here -- Rewrite this using ordered statistics tree
+        
+        // Traverse by offset steps.
+        let _ = (0..<abs(offset)).map({ _ in iterator.next() })
+
         // 3. Collect up to  limit  elements into your  [KVPair]  array.
-        // 4. Return the array.
-        // TODO:
-        return []
+        return (0..<limit)
+            .compactMap({ _ in iterator.next() })
+            .map({ node in return (node.member, node.score)})
     }
 }
 
@@ -312,6 +316,8 @@ fileprivate func treeSearch(from node: AVLNode?, for score: Double, and member: 
 // MARK: - Tree/Iterator
 
 struct AVLTreeIterator: IteratorProtocol {
+    // TODO: Support iterating in the reverse direction from the biggest to the smallest
+
     private var stack: [AVLNode] = []
 
     init(_ rootNode: AVLNode?, startingFrom target: (score: Double, member: ByteBuffer)? = nil){
