@@ -11,7 +11,7 @@ final class AVLNode {
     var right: AVLNode?
     // represent a leaf node with a default height of 1 and **not** 0
     private(set) var height: UInt8 = 1
-    // The number of nodes in the tree - This helps support ordered statistics tree operations
+    // The number of nodes in the subtree - This helps support ordered statistics tree operations
     private(set) var size: UInt = 1
 
     let score: Double
@@ -182,6 +182,8 @@ extension AVLTree {
     }
 }
 
+// MARK: - Tree/Balancing
+
 extension AVLTree {
     func balance(_ node: AVLNode) throws(AVLTreeError) -> ReplacementNode {
         let balanceFactor = node.balanceFactor()
@@ -289,6 +291,36 @@ extension AVLTree {
 
         let leftPrefix = prefix + (isLeft == false ? "│   " : "    ")
         printNode(node.left, prefix: leftPrefix, isLeft: true)
+    }
+}
+
+// MARK: - Tree/Ordered Statistics Tree
+extension AVLTree {
+    /// Returns the 0-based index of the target (or the index of its lower-bound if it doesn't exist)
+    func rank(of target: (score: Double, member: ByteBuffer)) -> UInt {
+        var currentNode = self.rootNode
+        var rankCount: UInt = 0
+
+        while let node = currentNode {
+            let cmp = node.compares(toScore: target.score, targetMember: target.member)
+
+            if cmp < 0 {
+                // `target` is larger, continue searching in the right subtree
+                // Tally the skipped left subtree and current node to `rankCount`
+                rankCount += (node.left?.size ?? 0) + 1
+                currentNode = node.right
+            } else if cmp > 0 {
+                // `target` is smaller than `currentNode`, search the left subtree
+                currentNode = node.left
+            } else {
+                // `targt` is equal to `currentNode`
+                // It's rank is the accumulated rank so far and the size of it's left tree
+                return rankCount + (node.left?.size ?? 0)
+            }
+        }
+
+        // `target` is not in the tree, but rankCount naturally holds the index of the lower-bound!
+        return rankCount
     }
 }
 
