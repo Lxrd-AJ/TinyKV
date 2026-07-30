@@ -19,8 +19,8 @@ struct HashNode<Value> {
 }
 
 /// A protocol defining the core operations for a key-value storage engine.
-protocol Datastorage {
-    associatedtype Value
+protocol Dictionary<Value> {
+    associatedtype Value: Comparable
     /// Inserts a new node into the storage.
     /// - Parameter key: The `ByteBuffer` containing the key.
     /// - Parameter value: The `Value` containing the value.

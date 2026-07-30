@@ -9,8 +9,17 @@ enum InsertResult {
 public final class SortedSet {
     // TODO: This class should delegate to `AVLTree` and `HashMap`. I need to use protocols in this class
     // so that for unit tests, I can mock out the tree & hashmap
-    internal let tree: AVLTree = AVLTree()
-    internal let hashmap: HashMap<Double> = HashMap<Double>(capacity: 2)
+    typealias KVPair = (member: ByteBuffer, score: Double)
+    typealias AVLTreeType = (any BinarySearchTree<Double> & RangeQueries<Double>)
+    typealias DictionaryType = (any Dictionary<Double>)
+    
+    internal let tree: AVLTreeType
+    internal let hashmap: DictionaryType
+
+    init(tree: AVLTreeType = AVLTree(), hashmap: DictionaryType = HashMap<Double>(capacity: 2)) {
+        self.tree = tree
+        self.hashmap = hashmap
+    }
 
     @discardableResult
     func insert(member: ByteBuffer, with score: Double) -> InsertResult {
@@ -53,21 +62,18 @@ public final class SortedSet {
         return nil
     }
 
-    // For ZRANGE / ZREVRANGE
     func range(from startRank: Int, to endRank: Int) -> [KVPair] {
         // TODO:
         return []
     }
 
-    // For ZRANGEBYSCORE
     func range(from startScore: Double, to endScore: Double) -> [KVPair] {
         // TODO: 
         return []
     }
 
-    // For ZQUERY key score name offset limit
     func query(startingAt score: Double, member: ByteBuffer, offset: Int, limit: UInt = 100) -> [KVPair]{
-        return self.tree.query(startingAt: score, member: member, offset: offset, limit: limit)
+        return self.tree.query(startingAt: (score, member), offset: offset, limit: limit)
     }
 }
 

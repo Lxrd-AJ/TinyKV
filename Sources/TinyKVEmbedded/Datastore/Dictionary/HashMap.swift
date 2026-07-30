@@ -9,7 +9,7 @@ import NIO
 ///
 /// This ensures that the server maintains predictable latency even as the dataset grows
 /// and triggers a resize.
-class HashMap<Value>: Datastorage {
+class HashMap<Value: Comparable>: Dictionary {
     /// The older hash table that is being migrated from during a rehash.
     /// This is `nil` when no rehashing is in progress.
     private(set) var oldHashTable: HashTable<Value>? 

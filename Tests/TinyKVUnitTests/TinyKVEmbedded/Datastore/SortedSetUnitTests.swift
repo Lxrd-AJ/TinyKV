@@ -47,11 +47,6 @@ struct SortedSetUnitTests {
         expectedState.forEach({ (member, _) in 
             #expect(specimen.delete(member) == true, "Failed to delete \(String(buffer: member)) from sorted set")
         })
-
-        // Verify `specimen` has been completely drained
-        #expect(specimen.tree.rootNode == nil, "The tree should be completely dead")
-        #expect(specimen.hashmap.newerHashTable.count == 0)
-        #expect(specimen.hashmap.oldHashTable == nil)
     }
 
     func createSpecimen() -> SortedSet {

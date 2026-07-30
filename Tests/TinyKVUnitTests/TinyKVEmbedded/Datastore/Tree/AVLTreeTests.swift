@@ -210,6 +210,100 @@ struct AVLTreeUnitTests {
         let secondDelete = tree.delete(score: itemToDelete.score, member: itemToDelete.member)
         #expect(secondDelete == false, "Deleting again should return false")
     }
+
+    struct AVLTreeRangeQueries {
+        @Test
+        func canPerformZQuery() {
+            let specimen = AVLTree()
+
+            // Let the tree represented the sorted nodes [A, B, C, D, E]
+            let A: AVLTree.KVPair = (buffer("A"), 10);
+            specimen.insert(score: A.score, member: A.member)
+            let C: AVLTree.KVPair = (buffer("C"), 30);
+            specimen.insert(score: C.score, member: C.member)
+            specimen.insert(score: 50, member: buffer("E"))
+            let B: AVLTree.KVPair = (buffer("B"), 20);
+            specimen.insert(score: B.score, member: B.member)
+            let D: AVLTree.KVPair = (buffer("D"), 40)
+            specimen.insert(score: D.score, member: D.member)
+
+            // Get the slice [A, B, C] by slicing forward from A
+            var expectedNodes = [A, B, C]
+            var actualNodes = specimen.query(startingAt: (10, buffer("A")), offset: 0, limit: 3)
+            verifyNodesEqual(actualNodes, expectedNodes, "Can slice using no offset")
+
+            // Get slice [B, C, D] by slicing forward with offset 1
+            expectedNodes = [B, C, D]
+            actualNodes = specimen.query(startingAt: (10, buffer("A")), offset: 1, limit: 3)
+            verifyNodesEqual(actualNodes, expectedNodes, "Can slice using offset")
+
+            // Get slice [A, B, C] by slicing backwards from E with offset 1
+            expectedNodes = [A, B, C]
+            actualNodes = specimen.query(startingAt: (50, buffer("E")), offset: -4, limit: 3)
+            verifyNodesEqual(actualNodes, expectedNodes, "Can slice backwards using -ve offset")
+        }
+
+        func verifyNodesEqual(_ left: [AVLTree.KVPair], _ right: [AVLTree.KVPair], _ diagnostic: Comment?) {
+            #expect(left.map { $0.score } == right.map { $0.score }, diagnostic)
+            #expect(left.map { $0.member } == right.map { $0.member }, diagnostic)
+        }
+    }
+
+    struct AVLTreeOrderedStatisticsTests {
+        @Test
+        func canGetNodeRank() {
+            let specimen = AVLTree()
+
+            // Let the tree represented the sorted nodes [A, B, C, D, E]
+            let A: AVLTree.KVPair = (buffer("A"), 10);
+            let B: AVLTree.KVPair = (buffer("B"), 20);
+            let C: AVLTree.KVPair = (buffer("C"), 30);
+            let D: AVLTree.KVPair = (buffer("D"), 40)
+            let E: AVLTree.KVPair = (buffer("E"), 50)
+            let items = [A, B, C, D, E]
+            items.forEach({ item in 
+                specimen.insert(score: item.score, member: item.member )
+            })
+            
+            #expect(specimen.rank(of: (A.score, A.member)) == 0)
+            #expect(specimen.rank(of: (B.score, B.member)) == 1)
+            #expect(specimen.rank(of: (C.score, C.member)) == 2)
+            #expect(specimen.rank(of: (D.score, D.member)) == 3)
+            #expect(specimen.rank(of: (E.score, E.member)) == 4)
+
+            #expect(specimen.rank(of: (-10, buffer("F"))) == 0, "Non existing item `F` would be the new 0 index")
+        }
+
+        @Test
+        func canSelectNodeAtIndex() {
+            let specimen = AVLTree()
+
+            // Let the tree represented the sorted nodes [A, B, C, D, E]
+            let A: AVLTree.KVPair = (buffer("A"), 10);
+            let B: AVLTree.KVPair = (buffer("B"), 20);
+            let C: AVLTree.KVPair = (buffer("C"), 30);
+            let D: AVLTree.KVPair = (buffer("D"), 40)
+            let E: AVLTree.KVPair = (buffer("E"), 50)
+            let items = [A, B, C, D, E]
+            items.forEach({ item in 
+                specimen.insert(score: item.score, member: item.member )
+            })
+
+            verifyNodeEquals(specimen.select(at: 0), item: A)
+            verifyNodeEquals(specimen.select(at: 1), item: B)
+            verifyNodeEquals(specimen.select(at: 2), item: C)
+            verifyNodeEquals(specimen.select(at: 3), item: D)
+            verifyNodeEquals(specimen.select(at: 4), item: E)
+
+            #expect(specimen.select(at: 100) == nil)
+        }
+
+        func verifyNodeEquals(_ node: AVLNode?, item: AVLTree.KVPair) {
+            #expect(node != nil, "Node should not be nil")
+            #expect(node!.score == item.score)
+            #expect(node!.member == item.member)
+        }
+    }
 }
 
 struct AVLTreeIteratorUnitTests {

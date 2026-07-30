@@ -10,7 +10,7 @@ import NIOCore
 /// ---
 /// **Important**: This class does not resize itself. It is intended to be managed by a
 ///   higher-level `HashMap` that orchestrates progressive rehashing between two instances.
-class HashTable<Value>: Datastorage {
+class HashTable<Value: Comparable>: Dictionary {
     /// The buckets of the hash table. Each bucket is a linked list of `HashNode<Value>`s.
     ///
     /// We store pointers to `HashNode<Value>`s to avoid unnecessary copying when moving nodes

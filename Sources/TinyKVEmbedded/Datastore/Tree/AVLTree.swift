@@ -51,7 +51,8 @@ final class AVLNode {
     }
 }
 
-class AVLTree {
+class AVLTree: BinarySearchTree {
+    typealias KVPair = (member: ByteBuffer, score: Double)
     private(set) var rootNode: AVLNode?
 
     func insert(score: Double, member: ByteBuffer) {
@@ -85,21 +86,26 @@ class AVLTree {
 }
 
 // Support range queries on the tree
-extension AVLTree {
+extension AVLTree: RangeQueries {
     // For ZQUERY key score name offset limit
-    func query(startingAt score: Double, member: ByteBuffer, offset: Int, limit: UInt = 100) -> [KVPair]{
-        guard let rootNode = self.rootNode else { return [] }
-        var iterator = AVLTreeIterator(rootNode, startingFrom: (score, member))
-        
-        // TODO: Continue here -- Rewrite this using ordered statistics tree
-        
-        // Traverse by offset steps.
-        let _ = (0..<abs(offset)).map({ _ in iterator.next() })
+    func query(startingAt: (score: Double, member: ByteBuffer), offset: Int, limit: UInt = 100) -> [KVPair] {
+        let baseRank = self.rank(of: startingAt)
+        let targetRank = Int(baseRank) + offset
+        guard targetRank >= 0 else {
+            return []
+        }
 
-        // 3. Collect up to  limit  elements into your  [KVPair]  array.
-        return (0..<limit)
-            .compactMap({ _ in iterator.next() })
-            .map({ node in return (node.member, node.score)})
+        guard let startingNode = self.select(at: UInt(targetRank)) else {
+            return []
+        }
+        var iterator = AVLTreeIterator(self.rootNode, startingFrom: (startingNode.score, startingNode.member))
+        
+        // Collect up to  limit  elements into your [KVPair]  array.
+        var result: [KVPair] = []
+        while let node = iterator.next(), result.count < limit {
+            result.append((node.member, node.score))
+        }
+        return result
     }
 }
 
@@ -296,7 +302,13 @@ extension AVLTree {
 
 // MARK: - Tree/Ordered Statistics Tree
 extension AVLTree {
-    /// Returns the 0-based index of the target (or the index of its lower-bound if it doesn't exist)
+    /// Calculates the 0-based index (rank) of a target node within the tree, as if the tree were a flattened, sorted array.
+    /// If the exact target does not exist, it naturally returns the rank of its lower-bound (the index where it *would* be inserted).
+    ///
+    /// This operates in O(log N) time by leveraging the Ordered Statistics Tree property (`size`).
+    ///
+    /// - Parameter target: A tuple containing the `score` and `member` to search for.
+    /// - Returns: The number of nodes strictly smaller than the target.
     func rank(of target: (score: Double, member: ByteBuffer)) -> UInt {
         var currentNode = self.rootNode
         var rankCount: UInt = 0
@@ -321,6 +333,42 @@ extension AVLTree {
 
         // `target` is not in the tree, but rankCount naturally holds the index of the lower-bound!
         return rankCount
+    }
+
+    /// Retrieves the node sitting at a specific 0-based index, as if the tree were a flattened, sorted array.
+    ///
+    /// This operates in O(log N) time by leveraging the Ordered Statistics Tree property (`size`) 
+    /// to efficiently skip past entire subtrees without needing to iterate through them.
+    ///
+    /// - Parameter index: The 0-based rank of the desired node.
+    /// - Returns: The `AVLNode` at the given index, or `nil` if the index is out of bounds.
+    func select(at index: UInt) -> AVLNode? {
+        var currentNode = self.rootNode
+        
+        // Think of the tree as a flattened, sorted array: [A, B, C, D, E].
+        // If D is our current node, the left subtree is [A, B, C] (size 3), and right is [E].
+        var remainingIndex = index
+
+        while let node = currentNode {
+            let leftSize = (node.left?.size ?? 0)
+
+            if remainingIndex < leftSize {
+                // If we want index 1 (B), we go left. In the new left array [A, B, C], 
+                // B is STILL at index 1. Skipping larger nodes (D, E) doesn't change our relative rank!
+                currentNode = node.left
+            } else if remainingIndex > leftSize {
+                // If we want index 4 (E), we go right. In the new right array [E], E is at index 0.
+                // We must subtract the left array size (3) and the current node (1).
+                remainingIndex -= (leftSize + 1)
+                currentNode = node.right
+            } else {
+                // `remainingIndex` == `leftSize`
+                // The exact node we're looking for has been found
+                return node
+            }
+        }
+
+        return nil
     }
 }
 
@@ -348,8 +396,6 @@ fileprivate func treeSearch(from node: AVLNode?, for score: Double, and member: 
 // MARK: - Tree/Iterator
 
 struct AVLTreeIterator: IteratorProtocol {
-    // TODO: Support iterating in the reverse direction from the biggest to the smallest
-
     private var stack: [AVLNode] = []
 
     init(_ rootNode: AVLNode?, startingFrom target: (score: Double, member: ByteBuffer)? = nil){
