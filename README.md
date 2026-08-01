@@ -24,33 +24,3 @@ Instead of C-style byte array iteration and `strcmp`, TinyKV leverages type-safe
 ### 4. Memory Management: ARC + ByteBuffer
 While Swift uses ARC for object lifecycles, TinyKV minimizes allocations to maintain Redis-like speeds. It relies heavily on SwiftNIO's `ByteBuffer` to perform zero-copy slicing of memory references, avoiding unnecessary copying of `Data` or `String` structures during core data ingestion.
 
-## 🚀 Future Roadmap
-
-### Optional Persistent Storage Engine (LSM-Tree)
-Extending TinyKV from an in-memory cache to a robust, on-disk storage engine comparable to RocksDB or LevelDB. 
-* **Write-Ahead Logging (WAL) & MemTables:** Moving from simple Swift Dictionaries to in-memory SkipLists paired with append-only WALs for crash durability.
-* **SSTables & Compaction:** Serializing immutable MemTables to disk as Sorted String Tables (SSTables) and utilizing background Swift Actors to merge and compact these files.
-* **Read Optimizations:** Implementing Bloom Filters and LRU Block Caches to prevent disk I/O bottlenecks during the read path.
-* **Range Queries:** Unlocking fast `SCAN_RANGE` queries by leveraging the inherently sorted nature of LSM-trees.
-* The user can choose to have either in-memory only or disk based persistence
-
-### AI Vector Search & Embedding
-Modern generative AI workloads require high-performance datastores. TinyKV plans to support native vector search directly within the datastore, mimicking the capabilities of the RediSearch module. 
-
-Future plans include:
-* **SIMD-Accelerated Vector Math & Specialized Indexing:** Implementing HNSW and utilizing Apple's `Accelerate` framework, MLX, or `simd` types for parallelized vector distance calculations (cosine similarity, dot product).
-* **Native AI Commands:** Extending the parsing engine to support commands like `FT.SEARCH` and custom commands such as `AI.SET user:1 "Text to embed"`, utilizing the local Neural Engine/GPU to generate and index vectors natively—removing massive network and processing bottlenecks for local AI agents.
-
-### Edge-to-Cloud Sync (TinyKV Cloud)
-The ultimate goal is to evolve TinyKV into a true **Local-First Architecture**. By leveraging the append-only nature of the LSM-tree Write-Ahead Log (WAL), TinyKV will act as a smart edge database that syncs seamlessly to a centralized cloud.
-* **WAL Streaming:** A background Swift Actor will stream local, unacknowledged WAL entries to the cloud via WebSockets/gRPC, and pull down changes from other devices.
-* **Conflict Resolution:** Implementing Last-Write-Wins (LWW) and Conflict-Free Replicated Data Types (CRDTs) directly in the engine to seamlessly merge offline edits (e.g., merging Sorted Sets from two offline devices).
-* **AI Command Sync Optimization:** Instead of syncing massive float vectors over the network, TinyKV will sync the raw `AI.SET` text commands via the WAL. The TinyKV Cloud will regenerate the identical vector on its own hardware, saving massive bandwidth.
-* **Cold Storage / SSTable Offloading:** Locally dropping older SSTables to free up disk space, and fetching missing data on-the-fly from Cloud SSTables when queried.
-
-# Future Extensions
-* Investigate Hopscotch algorithm for collision resolution, see https://github.com/Tessil/hopscotch-map 
-
-## 📄 License
-
-This project is licensed under the terms of the license found in the [LICENSE](LICENSE) file.
